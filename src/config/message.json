@@ -1,0 +1,43 @@
+{
+    "FRONTEND": {
+        "AUTH_FAILED": "Invalid login info",
+        "USERNAME_NOTFOUND": "username not found",
+        "AUTH_FAILED_WRONG_PASSWORD": "Wrong password",
+        "DUPLICATED_USERNAME": "Username has been used",
+        "INVALID_USERNAME": "Invalid username",
+        "DUPLICATED_EMAIL": "Duplicated email",
+        "EMAIL_NOT_FOUND": "Email not found",
+        "INACTIVE_EMAIL": "Email not active",
+        "WRONG_PASSWORD": "Wrong password",
+        "TOO_MANY_REQUEST": "Too many request",
+        "ACTIVE_USER": {
+            "ERROR": "Internal error",
+            "TOKEN_INVALID": "Invalid token",
+            "EMAIL_VERIFIED": "Email have been verify",
+            "EMAIL_VERIFY_SUCCESS": "Success verify email",
+            "SUCCESS": "Account success verify",
+            "EXPIRY": "Expiry account"
+        }
+    },
+    "RESPONSE": {
+        "GET_REQUEST_OK": "GET OK",
+        "POST_REQUEST_OK": "POST OK",
+        "PUT_REQUEST_OK": "PUT OK",
+        "PATCH_REQUEST_OK": "PATCH OK",
+        "DELETE_REQUEST_OK": "DELETE OK",
+        "CREATED": "DATA CREATED",
+        "REQUEST_GET_FAIL": "GET OK",
+        "POST_REQUEST_FAIL": "POST FAIL",
+        "PUT_REQUEST_FAIL": "PUT FAIL",
+        "PATCH_REQUEST_FAIL": "PATCH FAIL",
+        "DELETE_REQUEST_FAIL": "DELETE FAIL",
+        "DUPLICATED": "DUPLICATED",
+        "PROCESSING": "Processing request",
+        "BAD_REQUEST": "Bad request",
+        "INTERNAL_SERVER_ERROR": "Internal Server Error"
+    },
+    "UPLOAD": {
+        "IMAGE_FILE_TYPE_ONLY": "Forbidden image type",
+        "DOCUMENT_FILE_TYPE_ONLY": "Forbidden file type"
+    }
+}
