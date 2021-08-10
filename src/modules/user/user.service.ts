@@ -1,12 +1,23 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { MSG } from 'src/config/constants';
+
+// tool
 import { QueryOption } from 'src/tools/request.tool';
+
+// entity
 import { User, UserDocument } from './user.entity';
+
+// repository
 import { UserRepository } from './user.repository';
+
+// dto
 import { UpdateUserDTO } from './dto/updateUser.dto';
+
+// constants
+import { MSG } from 'src/config/constants';
+import { UserDTO } from './dto/user.dto';
 
 
 @Injectable()
@@ -29,10 +40,6 @@ export class UserService {
         return this.userRepository.findAll(option, conditions);
     }
 
-    async count(conditions: any = {}): Promise<number> {
-        return this.userRepository.count(conditions);
-    }
-
     async findById(id: string): Promise<UserDocument> {
         return this.userRepository.findById(id);
     }
@@ -42,6 +49,7 @@ export class UserService {
     }
 
     async createUser(user: Partial<User>): Promise<UserDocument> {
+
         const validateUsernameOrEmail = await this.validateUsernameOrEmail(user.username);
 
         if (!validateUsernameOrEmail) {
@@ -52,11 +60,6 @@ export class UserService {
 
         if (!createdUser.checkPasswordConfirm()) {
             throw new BadRequestException("Password and confirm password are not equal");
-        }
-
-        if (createdUser?.password && createdUser?.passwordConfirm) {
-            createdUser.password = await bcrypt.hash(createdUser.password, 10);
-            createdUser.passwordConfirm = null;
         }
 
         try {

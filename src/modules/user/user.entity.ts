@@ -144,10 +144,8 @@ export class User {
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.pre("save", async function () {
-    if (this.isModified("password")) {
-        return;
-    }
     const password = this.get('password');
+    this.set('passwordConfirm', null);
     this.set("password", password ? await bcrypt.hash(password, 10) : null);
 });
 

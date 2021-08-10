@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { UploadTool } from './upload.tool';
+import { UploadTool } from '../../common/tool/upload.tool';
 
 @Injectable()
 export class UploadService {
-    async uploadSingleImage(file: any): Promise<string> {
+    async uploadSingleImage(file: any): Promise<{ url: string }> {
         let url = '';
         if (file) {
             url = await UploadTool.resizeAndUploadSingle(file);
         }
-        return url;
+        return { url };
     }
 
     async uploadMultiImages(files: any): Promise<string[]> {
@@ -18,5 +18,4 @@ export class UploadService {
         }
         return urls;
     }
-
 }

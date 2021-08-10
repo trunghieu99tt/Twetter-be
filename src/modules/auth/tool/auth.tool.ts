@@ -7,4 +7,7 @@ export class AuthTool {
 
         return length & 1 ? res.slice(0, -1) : res;
     }
+
+
+
 }

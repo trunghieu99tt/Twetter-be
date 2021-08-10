@@ -2,37 +2,40 @@ import { MulterOptions } from "@nestjs/platform-express/multer/interfaces/multer
 import { exception } from "console";
 import { CLOUDINARY_PATH, CLOUDINARY_PATH_DEV, DEVELOPMENT } from "src/config/env";
 
-
-const cloudinary = require('cloudinary').v2;
-const sharp = require('sharp');
-const fs = require('fs');
+const cloudinary = require("cloudinary").v2;
+const sharp = require("sharp");
+const fs = require("fs");
 const multer = require('multer');
 
 export class UploadTool {
-    static imagePath: string = DEVELOPMENT ? CLOUDINARY_PATH_DEV : CLOUDINARY_PATH;
+    static imagePath: string = !DEVELOPMENT ? CLOUDINARY_PATH : CLOUDINARY_PATH_DEV;
 
-    static multerFilter = (req: any, file: any, cb: any) => {
-        if (!file.mime.startsWith('image/')) {
-            return cb(new exception('Not an image! Please upload images only', 400), false);
+    static multerFilter = (req, file, cb) => {
+        if (!file.mimetype.startsWith("image")) {
+            return cb(
+                new exception("Not an image! Please upload only images", 400),
+                false
+            );
         }
         cb(null, true);
-    }
+    };
 
     static imageUpload: MulterOptions = {
         storage: multer.memoryStorage(),
-        fileFilter: UploadTool.multerFilter
+        fileFilter: UploadTool.multerFilter,
     }
 
     static uploadPhotoToServer = async (file: any) => {
         try {
             const response = await cloudinary.uploader.upload(file);
-            return response?.secure_url;
+            return response && response.secure_url;
         } catch (error) {
             throw error;
         }
-    }
+    };
 
-    static resizeImage = async (file: any, width: number, height: number, format: string, quality: any) => {
+    static resizeImage = async (file, width, height, format, quality) => {
+
         try {
             await sharp(file.buffer)
                 .resize(width, height)
@@ -42,10 +45,10 @@ export class UploadTool {
         } catch (error) {
             throw error;
         }
-    }
+    };
 
     static resizeAndUploadSingle = async (
-        file: any,
+        file,
         width = 2000,
         height = 1333,
         format = "jpeg",
@@ -68,10 +71,10 @@ export class UploadTool {
         } catch (error) {
             throw error;
         }
-    }
+    };
 
     static resizeAndUploadMulti = async (
-        files: any,
+        files,
         width = 2000,
         height = 1333,
         format = "jpeg",

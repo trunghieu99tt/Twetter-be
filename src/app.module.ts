@@ -6,6 +6,8 @@ import { CommentModule } from './modules/comment/comment.module';
 import { TweetModule } from './modules/tweet/tweet.module';
 import { UserModule } from './modules/user/user.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { TokenModule } from './modules/token/token.module';
 
 @Module({
   imports: [
@@ -19,7 +21,9 @@ import { UploadModule } from './modules/upload/upload.module';
     CommentModule,
     TweetModule,
     UserModule,
-    UploadModule
+    UploadModule,
+    AuthModule,
+    TokenModule
   ],
   controllers: [],
   providers: [CommentService],

@@ -2,12 +2,10 @@ import { Inject, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Token, TokenDocument } from "./token.entity";
 import { Model } from "mongoose";
-import { AuthToolService } from "../tool/auth-tool/auth-tool.service";
 
 @Injectable()
 export class TokenService {
-    constructor(@InjectModel(Token.name) private tokenModel: Model<TokenDocument>,
-        private readonly authToolService: AuthToolService
+    constructor(@InjectModel(Token.name) private tokenModel: Model<TokenDocument>
     ) { }
 
     private JWTKey(userID: string, jti: string): string {

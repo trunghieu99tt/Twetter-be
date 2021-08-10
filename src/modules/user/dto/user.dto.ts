@@ -44,6 +44,7 @@ export class UserDTO {
     password: string;
 
 
+    @ApiProperty()
     @IsNotEmpty()
     @MinLength(8)
     @MaxLength(20)
