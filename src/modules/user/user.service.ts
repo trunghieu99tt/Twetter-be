@@ -19,6 +19,7 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 import { MSG } from 'src/config/constants';
 import { UserDTO } from './dto/user.dto';
 import { MongoError } from 'mongodb';
+import { TweetService } from '../tweet/tweet.service';
 
 
 @Injectable()
@@ -26,7 +27,8 @@ export class UserService {
 
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
-        private readonly userRepository: UserRepository) { }
+        private readonly userRepository: UserRepository,
+        private readonly tweetService: TweetService) { }
 
     async validateUsernameOrEmail(username: string): Promise<boolean> {
         return (
@@ -106,10 +108,35 @@ export class UserService {
     async followUser(user: UserDocument, userToFollowId: string) {
         const userToFollow = await this.findById(userToFollowId);
         if (user.following.includes(userToFollow)) {
-            throw new BadRequestException(UserService.name, "You're already following this user");
+            user.following.splice(user.following.indexOf(userToFollow), 1);
+        } else {
+            user.following.push(userToFollow);
         }
-        user.following.push(userToFollow);
         user.passwordConfirm = '';
-        await user.save();
+        try {
+            await user.save();
+        } catch (error) {
+
+            throw new BadRequestException(error);
+        }
     }
+
+    async saveTweet(tweetId: string, user: UserDocument) {
+        const tweet = await this.tweetService.getTweet(tweetId, user);
+        console.log('tweet: ', tweet);
+        try {
+            if (tweet) {
+                user.saved.push(tweet);
+                await user.save();
+                return user;
+            }
+            else {
+                throw new BadRequestException(UserService.name, "Tweet not found");
+            }
+        } catch (error) {
+            throw new BadRequestException(error);
+        }
+    }
+
+
 }

@@ -22,17 +22,6 @@ export const ApiQueryCond = () =>
         description: "Điều kiện tìm kiếm theo MongoDB",
     });
 
-export const ApiQuerySelect = () =>
-    ApiQuery({
-        name: "select",
-        required: false,
-        examples: {
-            Default: { value: "" },
-            Inclusive: { value: "_id createdAt updatedAt" },
-            Exclusive: { value: "-createdAt -updatedAt" },
-        },
-    });
-
 export const ApiQueryPagination = () =>
     applyDecorators(
         ApiQuery({
@@ -75,22 +64,12 @@ export const ApiQuerySort = () =>
         }),
     );
 
-export const ApiQueryCustom = () =>
-    ApiQuery({
-        name: "custom",
-        required: false,
-        examples: {
-            "Default (các giá trị query mặc định)": { value: "" },
-            "0 (các giá trị query mặc định)": { value: 0 },
-            "1 (các giá trị query tự chọn": { value: 1 },
-        },
-    });
 
 export const ApiQueryGetMany = () =>
-    applyDecorators(ApiQueryCustom(), ApiQueryCond(), ApiQuerySelect(), ApiQuerySort(), ApiQueryPagination());
+    applyDecorators(ApiQuerySort(), ApiQueryPagination());
 
 export const ApiQueryGetManyNoCond = () =>
-    applyDecorators(ApiQueryCustom(), ApiQueryCond(), ApiQuerySelect(), ApiQuerySort(), ApiQueryPagination());
+    applyDecorators(ApiQuerySort(), ApiQueryPagination());
 
 export const QueryGet = () => Query(QueryGetPipe);
 

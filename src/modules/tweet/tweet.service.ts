@@ -5,6 +5,7 @@ import { QueryOption } from 'src/tools/request.tool';
 import { UserDocument } from '../user/user.entity';
 import { CreateTweetDTO } from './dto/createTweet.dto';
 import { Tweet, TweetDocument } from './tweet.entity';
+import * as mongoose from 'mongoose';
 
 @Injectable()
 export class TweetService {
@@ -48,10 +49,6 @@ export class TweetService {
         }
     }
 
-    /**
-     * Get a tweet by id
-     *
-     */
     async getTweet(id: string, user: UserDocument): Promise<TweetDocument> {
         // get tweet by id and populate author except password and passwordConfirm
         const tweet = await this.tweetModel.findById(id)
@@ -61,8 +58,6 @@ export class TweetService {
         switch (JSON.stringify(tweet.audience)) {
             // if tweet is only me
             case '2':
-                console.log(`user._id`, user._id);
-                console.log(`tweet.author._id`, tweet.author._id)
                 if (tweet?.author?._id.toString() !== user?._id?.toString()) {
                     throw new BadRequestException('You are not the author of this tweet');
                 }
@@ -98,7 +93,6 @@ export class TweetService {
         return false;
     }
 
-
     // update a tweet
     async updateTweet(id: string, tweetDTO: CreateTweetDTO, user: UserDocument): Promise<TweetDocument> {
         const isAuthor = await this.hasPermission(user, id);
@@ -120,6 +114,97 @@ export class TweetService {
             throw new BadRequestException('You have no permission to delete this tweet');
         }
         await this.tweetModel.findByIdAndRemove(id).exec();
+    }
+
+    async reactTweet(id: string, user: UserDocument): Promise<any> {
+        const tweet = await this.getTweet(id, user);
+        if (!tweet) {
+            throw new BadRequestException('Tweet not found');
+        }
+
+        if (tweet.likes.includes(user._id)) {
+            tweet.likes.splice(tweet.likes.indexOf(user._id), 1);
+        } else {
+            tweet.likes.push(user._id);
+        }
+
+        try {
+            await tweet.save();
+        } catch (error) {
+            throw new BadRequestException(error);
+        }
+    }
+
+    async reTweet(tweetId: string, user: UserDocument) {
+        const tweet = await this.getTweet(tweetId, user);
+        if (!tweet) {
+            throw new BadRequestException('Tweet not found');
+        }
+
+        if (tweet.author._id.toString() === user._id.toString()) {
+            throw new BadRequestException('You can not re-tweet your own tweet');
+        }
+
+        const newTweet = new this.tweetModel({
+            content: tweet.content,
+            audience: 0,
+            createdAt: new Date(),
+            modifiedAt: new Date(),
+            isRetweet: true,
+            author: user,
+            likes: [],
+            media: tweet.media,
+            tags: tweet.tags,
+            retweet: [],
+        });
+
+        try {
+            const response = await newTweet.save();
+            return response;
+        }
+        catch (error) {
+            throw new BadRequestException(error);
+        }
+    }
+
+    async getMostPopularTweets(user: UserDocument, option: QueryOption): Promise<TweetDocument[]> {
+        const following = user.following;
+        const conditions = {
+            $or: [
+                { audience: 0 },
+                { author: { $in: following } },
+                { author: user }
+            ]
+        }
+
+        option.sort = {
+            ...option.sort,
+            likes: -1
+        }
+
+        const tweets = await this.findAll(option, conditions);
+
+        console.log(`tweets`, tweets)
+
+        return this.findAll(option, conditions);
+    }
+
+    async getLatestTweets(user: UserDocument, option: QueryOption): Promise<TweetDocument[]> {
+        const following = user.following;
+        const conditions = {
+            $or: [
+                { audience: 0 },
+                { author: { $in: following } },
+                { author: user }
+            ]
+        }
+
+        option.sort = {
+            ...option.sort,
+            modifiedAt: -1
+        }
+
+        return this.findAll(option, conditions);
     }
 
 }

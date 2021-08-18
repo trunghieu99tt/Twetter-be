@@ -47,4 +47,12 @@ export class UserController {
         return ResponseTool.POST_OK(await this.userService.followUser(user, userToFollowId))
     }
 
+    @Post('/save/:tweetId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiCreatedResponse({ type: ResponseDTO })
+    async saveTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(await this.userService.saveTweet(tweetId, user))
+    }
+
 }

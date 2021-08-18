@@ -148,7 +148,7 @@ export class User {
     comments: TweetDocument[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
-    saved: UserDocument[];
+    saved: TweetDocument[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     followers: UserDocument[];
@@ -165,8 +165,10 @@ export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.pre("save", async function () {
     const password = this.get('password');
-    this.set('passwordConfirm', null);
-    this.set("password", password ? await bcrypt.hash(password, 10) : null);
+    if (password) {
+        this.set('passwordConfirm', null);
+        this.set("password", password ? await bcrypt.hash(password, 10) : null);
+    }
 });
 
 UserSchema.methods.comparePassword = async function comparePassword(password: string): Promise<boolean> {

@@ -45,6 +45,7 @@ export class CommentService {
 
     async updateComment(commentId: string, updateCommentDto: CreateCommentDTO, user: UserDocument): Promise<CommentDocument> {
         const comment = await this.getCommentById(commentId);
+
         if (!comment) {
             throw new BadRequestException('Comment not found');
         }
@@ -54,6 +55,7 @@ export class CommentService {
         }
 
         updateCommentDto.modifiedAt = new Date();
+        updateCommentDto.isEdited = true;
 
         try {
             const comment = await this.commentModel.findByIdAndUpdate(commentId, updateCommentDto, { new: true });
@@ -100,7 +102,6 @@ export class CommentService {
     }
 
     async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<CommentDocument[]> {
-        console.log(`user`, user)
         try {
             // find comments by user id
             const comments = await this.commentModel.find({

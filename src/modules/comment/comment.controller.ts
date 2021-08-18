@@ -47,7 +47,7 @@ export class CommentController {
     @Patch('/:commentId')
     @ApiOkResponse({ type: ResponseDTO })
     @UseGuards(MyTokenAuthGuard)
-    async updateComment(@Param('commentId') commentId: string, @GetUser() user: UserDocument, commentDto: CreateCommentDTO) {
+    async updateComment(@Param('commentId') commentId: string, @GetUser() user: UserDocument, @Body() commentDto: CreateCommentDTO) {
         const updatedComment = await this.commentService.updateComment(commentId, commentDto, user);
         return ResponseTool.PATCH_OK(updatedComment);
     }

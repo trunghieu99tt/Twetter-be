@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsString } from "class-validator";
 import { User, UserDocument, USER_MODEL } from "../user/user.entity";
 import { Document, Schema as MongoSchema } from 'mongoose'
-import { CommentDocument, COMMENT_MODEL } from "../comment/comment.entity";
 import { EAudience } from "src/config/constants";
 
 export const TWEET_MODEL = "tweets";
@@ -59,6 +58,9 @@ export class Tweet {
         enum: Object.values(EAudience)
     })
     audience: EAudience;
+
+    @Prop(Boolean)
+    isRetweet: boolean;
 }
 
 

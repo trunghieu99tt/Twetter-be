@@ -4,15 +4,14 @@ import { UserController } from './user.controller';
 import { UserRepository } from './user.repository';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './user.entity';
-import { JWT_EXP, JWT_SECRET } from 'src/config/env';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
+import { TweetModule } from '../tweet/tweet.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
     ]),
+    TweetModule
   ],
   providers: [UserService, UserRepository],
   controllers: [UserController],

@@ -35,6 +35,24 @@ export class TweetController {
         return ResponseTool.GET_OK(data);
     }
 
+    @Get('/popular')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getPopularTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const data = await this.tweetService.getMostPopularTweets(user, query.options);
+        return ResponseTool.GET_OK(data);
+    }
+
+    @Get('/latest')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getLatestTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const data = await this.tweetService.getLatestTweets(user, query.options);
+        return ResponseTool.GET_OK(data);
+    }
+
     @Get('/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
@@ -57,5 +75,19 @@ export class TweetController {
     async deleteTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
         await this.tweetService.deleteTweet(tweetId, user);
         return ResponseTool.DELETE_OK({ message: "Tweet deleted" });
+    }
+
+    @Post('/react/:tweetId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    async reactToTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(await this.tweetService.reactTweet(tweetId, user));
+    }
+
+    @Post('/retweet/:tweetId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    async retweetTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(await this.tweetService.reTweet(tweetId, user));
     }
 }
