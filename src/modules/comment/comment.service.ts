@@ -1,22 +1,30 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Schema } from 'mongoose';
+import { Model } from 'mongoose';
 import { QueryPostOption } from 'src/tools/request.tool';
+import { TweetService } from '../tweet/tweet.service';
 import { UserDocument } from '../user/user.entity';
-import { Comment, CommentDocument, COMMENT_MODEL } from './comment.entity';
+import { Comment, CommentDocument } from './comment.entity';
 import { CreateCommentDTO } from './dto/createComment.dto';
+import * as mongoose from 'mongoose';
 
 @Injectable()
 export class CommentService {
     constructor(
         @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
+        private readonly tweetService: TweetService,
     ) { }
 
     async createComment(createCommentDto: CreateCommentDTO, user: UserDocument, tweetId: string): Promise<CommentDocument> {
-        const tweetObjectId = new Schema.Types.ObjectId(tweetId);
+        const tweet = await this.tweetService.getTweet(tweetId, user);
+
+        if (!tweet) {
+            throw new BadRequestException('Tweet not found');
+        }
+
         const newComment = new this.commentModel(createCommentDto);
         newComment.author = user;
-        newComment.tweet = tweetObjectId;
+        newComment.tweet = tweet;
 
         try {
             const response = await newComment.save();
@@ -45,8 +53,10 @@ export class CommentService {
             throw new BadRequestException('You are not allowed to update this comment');
         }
 
+        updateCommentDto.modifiedAt = new Date();
+
         try {
-            const comment = await this.commentModel.findByIdAndUpdate(commentId, updateCommentDto);
+            const comment = await this.commentModel.findByIdAndUpdate(commentId, updateCommentDto, { new: true });
             return comment;
         } catch (error) {
             throw new BadRequestException(error);
@@ -68,27 +78,36 @@ export class CommentService {
         }
     }
 
-    async findCommentsByTweetId(tweetId: string, query: QueryPostOption): Promise<CommentDocument[]> {
+    async findCommentsByTweetId(tweetId: string, user: UserDocument, query: QueryPostOption): Promise<CommentDocument[]> {
         try {
+
+            const tweet = await this.tweetService.getTweet(tweetId, user);
+
+            if (!tweet) {
+                throw new BadRequestException('Tweet not found');
+            }
+
             const comments = await this.commentModel.find({
-                tweet: new Schema.Types.ObjectId(tweetId),
+                "tweet": mongoose.Types.ObjectId(tweetId),
                 ...query.conditions,
-            })
+            }).populate("author", "name avatar coverPhoto")
                 .setOptions(query.options);
+
             return comments;
         } catch (error) {
             throw new BadRequestException(error);
         }
     }
 
-    async findCommentsByUserId(userId: string, page: number, pageSize: number): Promise<CommentDocument[]> {
+    async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<CommentDocument[]> {
+        console.log(`user`, user)
         try {
             // find comments by user id
             const comments = await this.commentModel.find({
-                "author._id": new Schema.Types.ObjectId(userId),
+                // "author._id": user._id,
+                ...query.conditions,
             })
-                .skip(page * pageSize)
-                .limit(pageSize);
+                .setOptions(query.options);
 
             return comments;
         } catch (error) {

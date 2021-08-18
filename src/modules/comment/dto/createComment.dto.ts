@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsDate, IsString } from "class-validator";
 
 export class CreateCommentDTO {
     @ApiProperty()
@@ -9,4 +9,8 @@ export class CreateCommentDTO {
     @ApiProperty()
     @IsString()
     media: string;
+
+    @ApiProperty()
+    @IsDate()
+    modifiedAt: Date;
 }

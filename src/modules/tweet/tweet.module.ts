@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 		MongooseModule.forFeature([{ name: Tweet.name, schema: TweetSchema }]),
 	],
 	providers: [TweetService],
-	controllers: [TweetController]
+	controllers: [TweetController],
+	exports: [TweetService],
 })
 export class TweetModule { }

@@ -1,5 +1,5 @@
-import { Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOkResponse, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiQueryGetMany, QueryGet } from 'src/common/decorators/common.decorator';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
@@ -12,15 +12,26 @@ import { CreateCommentDTO } from './dto/createComment.dto';
 
 @Controller('comment')
 @ApiTags('Comments')
+@ApiBearerAuth()
 export class CommentController {
     constructor(private readonly commentService: CommentService) { }
+
+    @Get('/user')
+    @ApiResponse({ type: ResponseDTO })
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getCommentsByUser(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const comments = await this.commentService.findCommentsByUser(user, query);
+        return ResponseTool.GET_OK(comments);
+    }
 
     @Get('/:tweetId')
     @ApiOkResponse({ type: ResponseDTO })
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getComments(@Param('tweetId') tweetId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const comments = await this.commentService.findCommentsByTweetId(tweetId, query);
+    async getCommentsByTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const comments = await this.commentService.findCommentsByTweetId(tweetId, user, query);
         const total = await this.commentService.count(query.conditions);
         return ResponseTool.GET_OK(comments, total);
     }
@@ -28,7 +39,7 @@ export class CommentController {
     @Post('/:tweetId')
     @ApiOkResponse({ type: ResponseDTO })
     @UseGuards(MyTokenAuthGuard)
-    async postComment(@Param('tweetId') tweetId: string, @GetUser() user: UserDocument, commentDto: CreateCommentDTO) {
+    async postComment(@Param('tweetId') tweetId: string, @GetUser() user: UserDocument, @Body() commentDto: CreateCommentDTO) {
         const newComment = await this.commentService.createComment(commentDto, user, tweetId);
         return ResponseTool.POST_OK(newComment);
     }

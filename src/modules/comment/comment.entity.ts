@@ -36,7 +36,7 @@ export class Comment {
 
     // author prop refs to a User
     @Prop({
-        type: MongoSchema.Types.ObjectId, ref: USER_MODEL
+        type: MongoSchema.Types.ObjectId, ref: User.name
     })
     author: User;
 

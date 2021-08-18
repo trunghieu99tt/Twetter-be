@@ -29,7 +29,8 @@ export class TweetService {
         const conditions = {
             $or: [
                 { audience: 0 },
-                { author: { $in: following } }
+                { author: { $in: following } },
+                { author: user }
             ]
         }
         return this.findAll(option, conditions);
@@ -60,6 +61,8 @@ export class TweetService {
         switch (JSON.stringify(tweet.audience)) {
             // if tweet is only me
             case '2':
+                console.log(`user._id`, user._id);
+                console.log(`tweet.author._id`, tweet.author._id)
                 if (tweet?.author?._id.toString() !== user?._id?.toString()) {
                     throw new BadRequestException('You are not the author of this tweet');
                 }
@@ -71,6 +74,11 @@ export class TweetService {
 
             // if tweet is public/followers
             case '1': {
+
+                if (tweet.author._id.toString() === user._id.toString()) {
+                    return tweet;
+                }
+
                 // check if user is following the author
                 if (!tweet.author.followers.includes(user._id) && !user.following.includes(tweet.author._id)) {
                     throw new BadRequestException('You are not following the author of this tweet');
