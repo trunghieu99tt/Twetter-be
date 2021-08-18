@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { DATABASE_URL } from './config/env';
-import { CommentService } from './modules/comment/comment.service';
 import { CommentModule } from './modules/comment/comment.module';
 import { TweetModule } from './modules/tweet/tweet.module';
 import { UserModule } from './modules/user/user.module';
@@ -26,6 +25,6 @@ import { TokenModule } from './modules/token/token.module';
     TokenModule
   ],
   controllers: [],
-  providers: [CommentService],
+  providers: [],
 })
 export class AppModule { }

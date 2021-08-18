@@ -1,6 +1,5 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { ApiCommonDecorator } from 'src/common/decorators/common.decorator';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
 import { GetUser } from '../user/decorator/getUser.decorator';
 import { UserDTO } from '../user/dto/user.dto';
@@ -10,7 +9,6 @@ import { AccessTokenResponse } from './dto/accessTokenResponse.dto';
 import { LoginDTO } from './dto/login.dto';
 
 @Controller('auth')
-@ApiCommonDecorator()
 @ApiTags("Auth")
 export class AuthController {
     constructor(

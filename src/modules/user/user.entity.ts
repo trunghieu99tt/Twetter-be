@@ -2,10 +2,12 @@ import { Prop, raw, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsEmail, IsString, Length } from "class-validator";
 import { Document } from "mongoose";
 import * as bcrypt from 'bcryptjs';
+import { Schema as MongoSchema } from 'mongoose';
 
 // constants
 import { EGender } from "src/config/constants";
 import { USER_CONST } from "./user.constants";
+import { TweetDocument, TWEET_MODEL } from "../tweet/tweet.entity";
 
 export const USER_MODEL = "users";
 
@@ -74,7 +76,6 @@ export class User {
     @Prop({
         type: String,
         index: true,
-        required: true,
         trim: true,
     })
     passwordConfirm: string;
@@ -137,6 +138,25 @@ export class User {
     @Prop()
     jti: string;
 
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
+    tweets: TweetDocument[];
+
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
+    liked: TweetDocument[];
+
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
+    comments: TweetDocument[];
+
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
+    saved: UserDocument[];
+
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
+    followers: UserDocument[];
+
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
+    following: UserDocument[];
+
+
     comparePassword: (password: string) => Promise<boolean>;
     checkPasswordConfirm: () => boolean;
 }
@@ -149,8 +169,8 @@ UserSchema.pre("save", async function () {
     this.set("password", password ? await bcrypt.hash(password, 10) : null);
 });
 
-UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
-    return bcrypt.compare(password, ((this as unknown) as User).password);
+UserSchema.methods.comparePassword = async function comparePassword(password: string): Promise<boolean> {
+    return bcrypt.compare(password, ((this as unknown) as User).password.toString());
 };
 
 UserSchema.methods.checkPasswordConfirm = function () {

@@ -1,7 +1,5 @@
-import { Body, Controller, Get, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Authorization } from 'src/common/decorators/auth.decorator';
-import { ApiCommonDecorator } from 'src/common/decorators/common.decorator';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
 import { ResponseTool } from 'src/tools/response.tool';
@@ -9,11 +7,10 @@ import { GetUser } from './decorator/getUser.decorator';
 import { RegisterUserDTO } from './dto/registerUser.dto';
 import { UpdateUserDTO } from './dto/updateUser.dto';
 import { UserDTO } from './dto/user.dto';
-import { User } from './user.entity';
+import { User, UserDocument } from './user.entity';
 import { UserService } from './user.service';
 
 @Controller('user')
-@ApiCommonDecorator()
 @ApiTags("Users")
 export class UserController {
     constructor(private readonly userService: UserService) { }
@@ -27,6 +24,7 @@ export class UserController {
     }
 
     @Get('/me')
+    @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiOkResponse({ type: ResponseDTO })
     async getMyProfile(@GetUser() user: User): Promise<ResponseDTO> {
@@ -34,10 +32,19 @@ export class UserController {
     }
 
     @Patch('/update')
+    @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiOkResponse({ type: ResponseDTO })
     async updateMyProfile(@GetUser() oldUser, @Body() newUserInfo: UpdateUserDTO): Promise<ResponseDTO> {
         return ResponseTool.PATCH_OK(await this.userService.updateUser(oldUser.username, newUserInfo))
+    }
+
+    @Post('/follow/:userId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiCreatedResponse({ type: ResponseDTO })
+    async followUser(@GetUser() user: UserDocument, @Param('userId') userToFollowId: string): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(await this.userService.followUser(user, userToFollowId))
     }
 
 }

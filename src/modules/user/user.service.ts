@@ -18,6 +18,7 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 // constants
 import { MSG } from 'src/config/constants';
 import { UserDTO } from './dto/user.dto';
+import { MongoError } from 'mongodb';
 
 
 @Injectable()
@@ -73,23 +74,42 @@ export class UserService {
 
     async updateUser(username: string, newUserInfo: UpdateUserDTO): Promise<UserDocument> {
 
+        const user = await this.findByUsernameOrEmail(username);
+
+        if (!user) {
+            throw new BadRequestException(UserService.name, "User not found");
+        }
+
         if (newUserInfo.password) {
             newUserInfo.password = await bcrypt.hash(newUserInfo.password, 10);
         }
 
-        try {
-            const updatedUser = this.userRepository.updateByUsername(username, newUserInfo);
-            if (updatedUser) {
-                return updatedUser;
-            }
-        } catch (error) {
-            throw new BadRequestException(error);
-        }
+        Object.assign(user, newUserInfo);
+
+        return user
+            .save()
+            .then((result: UserDocument) => {
+                result.password = undefined;
+                return result;
+            })
+            .catch((err: MongoError) => {
+                throw new BadRequestException(err);
+            });
     }
 
     async findByGoogleId(id: string): Promise<UserDocument> {
         return this.userModel.findOne({
             "google.id": id
         }).exec();
+    }
+
+    async followUser(user: UserDocument, userToFollowId: string) {
+        const userToFollow = await this.findById(userToFollowId);
+        if (user.following.includes(userToFollow)) {
+            throw new BadRequestException(UserService.name, "You're already following this user");
+        }
+        user.following.push(userToFollow);
+        user.passwordConfirm = '';
+        await user.save();
     }
 }

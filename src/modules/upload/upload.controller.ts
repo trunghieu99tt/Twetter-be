@@ -5,10 +5,7 @@ import { UploadService } from './upload.service';
 import { UploadTool } from '../../common/tool/upload.tool';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { ApiFile } from 'src/common/decorators/apiFile.decorator';
-import { ApiCommonDecorator } from 'src/common/decorators/common.decorator';
-
 @Controller('upload')
-@ApiCommonDecorator()
 @ApiTags("Upload")
 export class UploadController {
 

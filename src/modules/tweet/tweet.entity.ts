@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsString } from "class-validator";
-import { User, USER_MODEL } from "../user/user.entity";
+import { User, UserDocument, USER_MODEL } from "../user/user.entity";
 import { Document, Schema as MongoSchema } from 'mongoose'
-import { COMMENT_MODEL } from "../comment/comment.entity";
+import { CommentDocument, COMMENT_MODEL } from "../comment/comment.entity";
+import { EAudience } from "src/config/constants";
 
 export const TWEET_MODEL = "tweets";
 
@@ -29,25 +30,38 @@ export class Tweet {
     tags: string[];
 
     @IsString()
-    @Prop({
-        type: String
-    })
-    media: string;
+    @Prop([String])
+    media: string[];
 
     @Prop({
         type: MongoSchema.Types.ObjectId,
-        ref: USER_MODEL
+        ref: User.name
     })
-    author: User;
+    author: UserDocument;
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: USER_MODEL }] })
-    likes: User[];
+    likes: UserDocument[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: COMMENT_MODEL }] })
-    comments: Comment[];
+    comments: CommentDocument[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: USER_MODEL }] })
-    retweet: User[];
+    retweet: UserDocument[];
+
+    @Prop({
+        type: Date
+    })
+    createdAt: Date;
+
+    @Prop({
+        type: Date
+    })
+    modifiedAt: Date;
+
+    @Prop({
+        enum: Object.values(EAudience)
+    })
+    audience: EAudience;
 }
 
 

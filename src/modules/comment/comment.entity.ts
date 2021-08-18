@@ -1,15 +1,12 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsBoolean, IsDate, IsString } from "class-validator";
-import { Document, Schema as MongoSchema } from "mongoose";
+import { Document, ObjectId, Schema as MongoSchema } from "mongoose";
+import { Tweet } from "../tweet/tweet.entity";
 import { User, USER_MODEL } from "../user/user.entity";
 
 export const COMMENT_MODEL = 'comments';
 
-@Schema({
-    timestamps: true,
-    collection: COMMENT_MODEL,
-    toJSON: { virtuals: true }
-})
+@Schema()
 export class Comment {
     @IsString()
     @Prop(String)
@@ -30,6 +27,12 @@ export class Comment {
     @IsString()
     @Prop(String)
     media: string;
+
+    @Prop({
+        type: MongoSchema.Types.ObjectId,
+        ref: Tweet.name
+    })
+    tweet: Tweet | MongoSchema.Types.ObjectId
 
     // author prop refs to a User
     @Prop({

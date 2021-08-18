@@ -21,6 +21,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
   imports: [
     UserModule,
     HttpModule,
+    PassportModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: JWT_SECRET,

@@ -43,7 +43,7 @@ export class AuthService {
             jti
         } as PayloadDTO;
 
-        this.tokenService.setJWTKey(userId, jti, JWT_EXP, timestamp);
+        await this.tokenService.setJWTKey(userId, jti, JWT_EXP, timestamp);
 
         const accessToken = this.jwtService.sign(payload);
         return accessToken;

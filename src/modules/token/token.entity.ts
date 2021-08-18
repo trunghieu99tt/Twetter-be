@@ -5,18 +5,17 @@ import { Prop, raw, Schema, SchemaFactory } from "@nestjs/mongoose";
     toJSON: { virtuals: true }
 })
 export class Token {
-    _id: string;
-
-    @Prop()
+    @Prop(String)
     key: string;
 
-    @Prop()
+    @Prop(Number)
     expAt: number;
 
-    @Prop()
+    @Prop(Number)
     createdAt: number
 }
 
 export const TokenSchema = SchemaFactory.createForClass(Token);
 
-export type TokenDocument = Token & Document;
+export interface TokenDocument extends Token, Document { };
+
