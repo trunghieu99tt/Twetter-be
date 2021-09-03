@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { InjectModel } from '@nestjs/mongoose';
@@ -28,6 +28,7 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         private readonly userRepository: UserRepository,
+        @Inject(forwardRef(() => TweetService))
         private readonly tweetService: TweetService) { }
 
     async validateUsernameOrEmail(username: string): Promise<boolean> {
@@ -107,23 +108,25 @@ export class UserService {
 
     async followUser(user: UserDocument, userToFollowId: string) {
         const userToFollow = await this.findById(userToFollowId);
-        if (user.following.includes(userToFollow)) {
-            user.following.splice(user.following.indexOf(userToFollow), 1);
+        if (user.following.some(user => user._id.toString() === userToFollow._id.toString())) {
+            user.following.splice(user.following.findIndex(user => user.id.toString() === userToFollow._id.toString()), 1);
+            userToFollow.followers.splice(userToFollow.followers.findIndex(u => u._id.toString() === user._id.toString()), 1);
         } else {
             user.following.push(userToFollow);
+            userToFollow.followers.push(user);
         }
         user.passwordConfirm = '';
+        userToFollow.passwordConfirm = '';
         try {
             await user.save();
+            await userToFollow.save();
         } catch (error) {
-
             throw new BadRequestException(error);
         }
     }
 
     async saveTweet(tweetId: string, user: UserDocument) {
         const tweet = await this.tweetService.getTweet(tweetId, user);
-        console.log('tweet: ', tweet);
         try {
             if (tweet) {
                 user.saved.push(tweet);

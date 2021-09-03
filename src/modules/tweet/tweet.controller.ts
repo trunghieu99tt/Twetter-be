@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiQueryGetMany, QueryGet } from 'src/common/decorators/common.decorator';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
@@ -31,8 +31,17 @@ export class TweetController {
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
     async getNewsFeedTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const data = await this.tweetService.getPublicOrFollowersOnlyTweets(user, query.options);
-        return ResponseTool.GET_OK(data);
+        const { data, total } = await this.tweetService.getPublicOrFollowersOnlyTweets(user, query.options);
+        return ResponseTool.GET_OK(data, total);
+    }
+
+    @Get('/user/:userId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getTweetsByUser(@Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getTweetsByUser(userId, query.options);
+        return ResponseTool.GET_OK(data, total);
     }
 
     @Get('/popular')

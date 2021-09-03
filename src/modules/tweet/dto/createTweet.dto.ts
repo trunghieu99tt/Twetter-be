@@ -5,13 +5,13 @@ import { EAudience } from "src/config/constants";
 export class CreateTweetDTO {
     @ApiProperty()
     @IsString()
-    content: string;
+    content?: string;
 
     @ApiProperty()
-    tags: string[];
+    tags?: string[];
 
     @ApiProperty()
-    media: string[];
+    media?: string[];
 
     @ApiProperty()
     audience: EAudience;

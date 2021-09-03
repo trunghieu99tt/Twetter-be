@@ -31,6 +31,12 @@ export class UserController {
         return ResponseTool.GET_OK(user)
     }
 
+    @Get('/:userId')
+    @ApiOkResponse({ type: UserDTO })
+    async getUserById(@Param('userId') userId: string): Promise<ResponseDTO> {
+        return ResponseTool.GET_OK(await this.userService.findById(userId));
+    }
+
     @Patch('/update')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)

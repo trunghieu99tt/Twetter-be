@@ -15,7 +15,6 @@ export class Tweet {
     @IsString()
     @Prop({
         type: String,
-        required: true,
     })
     content: string;
 
@@ -38,11 +37,14 @@ export class Tweet {
     })
     author: UserDocument;
 
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: USER_MODEL }] })
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     likes: UserDocument[];
 
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: USER_MODEL }] })
-    retweet: UserDocument[];
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
+    retweeted: UserDocument[];
+
+    @Prop({ type: MongoSchema.Types.ObjectId, ref: User.name })
+    retweetedBy: UserDocument;
 
     @Prop({
         type: Date

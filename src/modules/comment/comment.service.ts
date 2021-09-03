@@ -1,12 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { QueryPostOption } from 'src/tools/request.tool';
+import { QueryOption, QueryPostOption } from 'src/tools/request.tool';
 import { TweetService } from '../tweet/tweet.service';
 import { UserDocument } from '../user/user.entity';
 import { Comment, CommentDocument } from './comment.entity';
 import { CreateCommentDTO } from './dto/createComment.dto';
-import * as mongoose from 'mongoose';
 
 @Injectable()
 export class CommentService {
@@ -15,6 +14,17 @@ export class CommentService {
         private readonly tweetService: TweetService,
     ) { }
 
+    async findAll(option: QueryOption, conditions: any = {}): Promise<CommentDocument[]> {
+        return this.commentModel
+            .find(conditions)
+            .sort(option.sort)
+            .select({ password: 0, passwordConfirm: 0 })
+            .skip(option.skip)
+            .limit(option.limit)
+            .populate('likes', '_id avatar name')
+            .populate("author", "name avatar coverPhoto");
+    }
+
     async createComment(createCommentDto: CreateCommentDTO, user: UserDocument, tweetId: string): Promise<CommentDocument> {
         const tweet = await this.tweetService.getTweet(tweetId, user);
 
@@ -22,9 +32,16 @@ export class CommentService {
             throw new BadRequestException('Tweet not found');
         }
 
-        const newComment = new this.commentModel(createCommentDto);
-        newComment.author = user;
-        newComment.tweet = tweet;
+        const newComment = new this.commentModel(
+            {
+                ...createCommentDto,
+                isEdited: false,
+                tweet: tweet,
+                author: user,
+                modifiedAt: new Date(),
+                createdAt: new Date(),
+            }
+        );
 
         try {
             const response = await newComment.save();
@@ -80,37 +97,33 @@ export class CommentService {
         }
     }
 
-    async findCommentsByTweetId(tweetId: string, user: UserDocument, query: QueryPostOption): Promise<CommentDocument[]> {
+    async findCommentsByTweetId(tweetId: string, user: UserDocument, query: QueryPostOption): Promise<{ data: CommentDocument[], total: number }> {
         try {
-
             const tweet = await this.tweetService.getTweet(tweetId, user);
-
             if (!tweet) {
                 throw new BadRequestException('Tweet not found');
             }
-
-            const comments = await this.commentModel.find({
-                "tweet": mongoose.Types.ObjectId(tweetId),
-                ...query.conditions,
-            }).populate("author", "name avatar coverPhoto")
-                .setOptions(query.options);
-
-            return comments;
+            const conditions = {
+                "tweet": tweetId
+            }
+            const comments = await this.findAll(query.options, conditions);
+            const total = await this.count({ conditions });
+            return { data: comments, total };
         } catch (error) {
             throw new BadRequestException(error);
         }
     }
 
-    async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<CommentDocument[]> {
+    async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<{
+        data: CommentDocument[], total: number
+    }> {
         try {
-            // find comments by user id
-            const comments = await this.commentModel.find({
-                // "author._id": user._id,
-                ...query.conditions,
-            })
-                .setOptions(query.options);
-
-            return comments;
+            const conditions = {
+                author: user._id
+            }
+            const comments = await this.findAll(query.options, conditions);
+            const total = await this.count({ conditions });
+            return { data: comments, total };
         } catch (error) {
             throw new BadRequestException(error);
         }

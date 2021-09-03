@@ -36,9 +36,16 @@ export class Comment {
 
     // author prop refs to a User
     @Prop({
-        type: MongoSchema.Types.ObjectId, ref: User.name
+        type: MongoSchema.Types.ObjectId,
+        ref: User.name
     })
     author: User;
+
+    @Prop({
+        type: MongoSchema.Types.ObjectId,
+        ref: User.name
+    })
+    likes: User[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: COMMENT_MODEL }] })
     replies: Comment[];

@@ -27,7 +27,9 @@ export class UploadTool {
 
     static uploadPhotoToServer = async (file: any) => {
         try {
-            const response = await cloudinary.uploader.upload(file);
+            const response = await cloudinary.uploader.upload(file, {
+                folder: 'Tweeter'
+            });
             return response && response.secure_url;
         } catch (error) {
             throw error;
@@ -38,7 +40,7 @@ export class UploadTool {
 
         try {
             await sharp(file.buffer)
-                .resize(width, height)
+                // .resize(width, height)
                 .toFormat(format)
                 .jpeg({ quality })
                 .toFile(`${UploadTool.imagePath}/uploader.jpeg`);
@@ -52,7 +54,7 @@ export class UploadTool {
         width = 2000,
         height = 1333,
         format = "jpeg",
-        quality = 90
+        quality = 100
     ) => {
         try {
             // First, resize image using sharp

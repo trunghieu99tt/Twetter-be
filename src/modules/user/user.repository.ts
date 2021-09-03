@@ -20,7 +20,12 @@ export class UserRepository {
     }
 
     async findById(id: string): Promise<UserDocument> {
-        return this.userModel.findById(id).select({ password: 0 }).exec();
+        return this.userModel
+            .findById(id)
+            .select({ password: 0 })
+            .populate('follower', '_id name avatar bio')
+            .populate('following', '_id name avatar bio')
+            .exec();
     }
 
     async findByUserName(userName: string): Promise<UserDocument> {

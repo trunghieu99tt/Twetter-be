@@ -22,8 +22,8 @@ export class CommentController {
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
     async getCommentsByUser(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const comments = await this.commentService.findCommentsByUser(user, query);
-        return ResponseTool.GET_OK(comments);
+        const { data, total } = await this.commentService.findCommentsByUser(user, query);
+        return ResponseTool.GET_OK(data, total);
     }
 
     @Get('/:tweetId')
@@ -31,9 +31,8 @@ export class CommentController {
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
     async getCommentsByTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const comments = await this.commentService.findCommentsByTweetId(tweetId, user, query);
-        const total = await this.commentService.count(query.conditions);
-        return ResponseTool.GET_OK(comments, total);
+        const { data, total } = await this.commentService.findCommentsByTweetId(tweetId, user, query);
+        return ResponseTool.GET_OK(data, total);
     }
 
     @Post('/:tweetId')

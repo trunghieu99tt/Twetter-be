@@ -28,7 +28,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         }
         user.jti = payload.jti;
         const checkJwt = await this.tokenService.checkJWTKey(sub, jti);
-        console.log(`checkJwt`, checkJwt)
         if (!checkJwt) {
             throw new UnauthorizedException("Invalid Jwt Token");
         }
