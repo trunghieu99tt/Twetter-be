@@ -30,6 +30,12 @@ export class TweetService {
             .populate('retweetedBy', 'name avatar coverPhoto');
     }
 
+    async findAllAndCount(option: QueryOption, conditions: any = {}): Promise<ResponseDTO> {
+        const data = await this.findAll(option, conditions);
+        const total = await this.count({ conditions });
+        return { data, total };
+    }
+
     async getPublicOrFollowersOnlyTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
         const following = user.following;
         const conditions = {
@@ -39,9 +45,7 @@ export class TweetService {
                 { author: user }
             ]
         }
-        const data = await this.findAll(option, conditions);
-        const total = await this.count({ conditions });
-        return { data, total };
+        return this.findAllAndCount(option, conditions);
     }
 
     async getTweetsByUser(userId: string, option: QueryOption): Promise<ResponseDTO> {
@@ -52,9 +56,7 @@ export class TweetService {
                 { retweetedBy: user }
             ]
         }
-        const data = await this.findAll(option, conditions);
-        const total = await this.count({ conditions });
-        return { data, total }
+        return this.findAllAndCount(option, conditions);
     }
 
     // create a tweet
@@ -65,21 +67,32 @@ export class TweetService {
             const response = await tweet.save();
             return response;
         } catch (error) {
-            console.log('error: ', error);
             throw new BadRequestException(error);
         }
     }
 
+    // get single tweet
     async getTweet(id: string, user: UserDocument): Promise<TweetDocument> {
         // get tweet by id and populate author except password and passwordConfirm
         const tweet = await this.tweetModel.findById(id)
             .populate('author', 'name avatar coverPhoto followers gender')
             .exec();
 
+        const userId = user?._id?.toString() || "";
+        const tweetAuthorId = tweet?.author?._id?.toString() || "";
+        const retweetedById = tweet?.isRetweet && tweet?.retweetedBy?._id?.toString() || "";
+
+        const isRetweet = tweet?.isRetweet || false;
+
+        // we need these information for comparator step below
+        // if they don't exist => our server caught error, so return null immediately without any comparator
+        if (!user || !tweetAuthorId)
+            return null;
+
         switch (JSON.stringify(tweet.audience)) {
             // if tweet is only me
             case '2':
-                if (tweet?.author?._id.toString() !== user?._id?.toString() && tweet?.retweetedBy?._id.toString() !== user?._id?.toString()) {
+                if (userId !== tweetAuthorId && (isRetweet && userId !== retweetedById)) {
                     throw new BadRequestException('You are not the author of this tweet');
                 }
                 return tweet;
@@ -87,16 +100,15 @@ export class TweetService {
             // if tweet is public
             case '0':
                 return tweet;
-
             // if tweet is public/followers
             case '1': {
 
-                if (tweet.author._id.toString() === user._id.toString() || tweet.retweetedBy._id.toString() === user._id.toString()) {
+                if (userId !== tweetAuthorId || (isRetweet && userId !== retweetedById)) {
                     return tweet;
                 }
 
                 // check if user is following the author
-                if (!tweet.author.followers.includes(user._id) && !user.following.includes(tweet.author._id)) {
+                if (!tweet?.author?.followers?.includes(userId) && !user?.following?.includes(tweetAuthorId)) {
                     throw new BadRequestException('You are not following the author of this tweet');
                 }
                 return tweet;
@@ -106,12 +118,21 @@ export class TweetService {
         }
     }
 
-    async hasPermission(user: UserDocument, tweetId: string): Promise<boolean> {
+    // check if user is author of tweet or not
+    async hasPermission(user: UserDocument, tweetId: string): Promise<TweetDocument | null> {
         const tweet: TweetDocument = await this.getTweet(tweetId, user);
-        if (user._id.toString() === tweet.author._id.toString() || user._id.toString() === tweet.retweetedBy._id.toString()) {
-            return true;
+        if (!tweet) {
+            throw new BadRequestException('Tweet not found');
         }
-        return false;
+        const userId = user?._id?.toString() || "";
+        const tweetAuthorId = tweet?.author?._id?.toString() || "";
+        const isRetweet = tweet?.isRetweet || false;
+
+        const retweetedById = tweet?.isRetweet && tweet?.retweetedBy?._id?.toString() || "";
+        if (userId !== tweetAuthorId || (isRetweet && userId !== retweetedById)) {
+            return tweet;
+        }
+        return null;
     }
 
     // update a tweet
@@ -158,7 +179,6 @@ export class TweetService {
 
     async saveTweet(id: string, user: UserDocument): Promise<any> {
         const tweet = await this.getTweet(id, user);
-        console.log(`tweet`, tweet)
         if (!tweet) {
             throw new BadRequestException('Tweet not found');
         }
@@ -175,37 +195,35 @@ export class TweetService {
     }
 
     async reTweet(tweetId: string, user: UserDocument) {
-        const tweet = await this.getTweet(tweetId, user);
-        if (!tweet) {
-            throw new BadRequestException('Tweet not found');
-        }
-
-        if (tweet?.author?._id.toString() === user?._id?.toString() || tweet?.retweetedBy?._id?.toString() === user?._id?.toString()) {
-            throw new BadRequestException('You can not re-tweet your own tweet');
-        }
-
-        tweet.retweeted.push(user._id);
-
-        const newTweet = new this.tweetModel({
-            author: tweet.author,
-            content: tweet.content,
-            audience: 0,
-            createdAt: new Date(),
-            modifiedAt: new Date(),
-            isRetweet: true,
-            likes: [],
-            media: tweet.media,
-            tags: tweet.tags,
-            retweet: [],
-            retweetedBy: user
-        });
-
         try {
-            await tweet.save();
-            const response = await newTweet.save();
-            return response;
-        }
-        catch (error) {
+            const tweet = await this.hasPermission(user, tweetId);
+            if (!tweet) {
+                throw new BadRequestException('You have no permission to retweet this tweet');
+            }
+            tweet.retweeted.push(user._id);
+            const newTweet = new this.tweetModel({
+                author: tweet.author,
+                content: tweet.content,
+                audience: 0,
+                createdAt: new Date(),
+                modifiedAt: new Date(),
+                isRetweet: true,
+                likes: [],
+                media: tweet.media,
+                tags: tweet.tags,
+                retweet: [],
+                retweetedBy: user
+            });
+
+            try {
+                await tweet.save();
+                const response = await newTweet.save();
+                return response;
+            }
+            catch (error) {
+                throw new BadRequestException(error);
+            }
+        } catch (error) {
             throw new BadRequestException(error);
         }
     }
@@ -264,25 +282,18 @@ export class TweetService {
                 { author: user }
             ]
         }
-
         option.sort = {
             ...option.sort,
             modifiedAt: -1
         }
-
-        const data = await this.findAll(option, conditions);
-        const total = await this.count({ conditions });
-
-        return { data, total };
+        return this.findAllAndCount(option, conditions);
     }
 
     async getSavedTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
         const conditions = {
             saved: user._id
         }
-        const data = await this.findAll(option, conditions);
-        const total = await this.count({ conditions });
-        return { data, total }
+        return this.findAllAndCount(option, conditions);
     }
 
     count({ conditions }: { conditions?: any } = {}): Promise<number> {

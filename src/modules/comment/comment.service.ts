@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { ResponseDTO } from 'src/common/dto/response.dto';
 import { QueryOption, QueryPostOption } from 'src/tools/request.tool';
 import { TweetService } from '../tweet/tweet.service';
 import { UserDocument } from '../user/user.entity';
@@ -25,13 +26,17 @@ export class CommentService {
             .populate("author", "name avatar coverPhoto");
     }
 
+    async findAllAndCount(option: QueryOption, conditions: any = {}): Promise<ResponseDTO> {
+        const data = await this.findAll(option, conditions);
+        const total = await this.count({ conditions });
+        return { data, total };
+    }
+
     async createComment(createCommentDto: CreateCommentDTO, user: UserDocument, tweetId: string): Promise<CommentDocument> {
         const tweet = await this.tweetService.getTweet(tweetId, user);
-
         if (!tweet) {
             throw new BadRequestException('Tweet not found');
         }
-
         const newComment = new this.commentModel(
             {
                 ...createCommentDto,
@@ -42,7 +47,6 @@ export class CommentService {
                 createdAt: new Date(),
             }
         );
-
         try {
             const response = await newComment.save();
             return response;
@@ -97,7 +101,7 @@ export class CommentService {
         }
     }
 
-    async findCommentsByTweetId(tweetId: string, user: UserDocument, query: QueryPostOption): Promise<{ data: CommentDocument[], total: number }> {
+    async findCommentsByTweetId(tweetId: string, user: UserDocument, query: QueryPostOption): Promise<ResponseDTO> {
         try {
             const tweet = await this.tweetService.getTweet(tweetId, user);
             if (!tweet) {
@@ -106,24 +110,19 @@ export class CommentService {
             const conditions = {
                 "tweet": tweetId
             }
-            const comments = await this.findAll(query.options, conditions);
-            const total = await this.count({ conditions });
-            return { data: comments, total };
+            return this.findAllAndCount(query.options, conditions);
+
         } catch (error) {
             throw new BadRequestException(error);
         }
     }
 
-    async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<{
-        data: CommentDocument[], total: number
-    }> {
+    async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<ResponseDTO> {
         try {
             const conditions = {
                 author: user._id
             }
-            const comments = await this.findAll(query.options, conditions);
-            const total = await this.count({ conditions });
-            return { data: comments, total };
+            return this.findAllAndCount(query.options, conditions);
         } catch (error) {
             throw new BadRequestException(error);
         }

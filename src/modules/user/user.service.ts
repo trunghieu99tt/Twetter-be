@@ -27,8 +27,7 @@ export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         private readonly userRepository: UserRepository,
-        @Inject(forwardRef(() => TweetService))
-        private readonly tweetService: TweetService) { }
+    ) { }
 
     async validateUsernameOrEmail(username: string): Promise<boolean> {
         return (
