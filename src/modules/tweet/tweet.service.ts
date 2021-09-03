@@ -6,6 +6,7 @@ import { UserDocument } from '../user/user.entity';
 import { CreateTweetDTO } from './dto/createTweet.dto';
 import { Tweet, TweetDocument } from './tweet.entity';
 import { UserService } from '../user/user.service';
+import { ResponseDTO } from 'src/common/dto/response.dto';
 
 @Injectable()
 export class TweetService {
@@ -29,7 +30,7 @@ export class TweetService {
             .populate('retweetedBy', 'name avatar coverPhoto');
     }
 
-    async getPublicOrFollowersOnlyTweets(user: UserDocument, option: QueryOption): Promise<{ data: TweetDocument[], total: number }> {
+    async getPublicOrFollowersOnlyTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
         const following = user.following;
         const conditions = {
             $or: [
@@ -43,7 +44,7 @@ export class TweetService {
         return { data, total };
     }
 
-    async getTweetsByUser(userId: string, option: QueryOption): Promise<{ data: TweetDocument[], total: number }> {
+    async getTweetsByUser(userId: string, option: QueryOption): Promise<ResponseDTO> {
         const user = await this.userService.findById(userId);
         const conditions = {
             $or: [
@@ -155,14 +156,29 @@ export class TweetService {
         }
     }
 
+    async saveTweet(id: string, user: UserDocument): Promise<any> {
+        const tweet = await this.getTweet(id, user);
+        console.log(`tweet`, tweet)
+        if (!tweet) {
+            throw new BadRequestException('Tweet not found');
+        }
+        if (tweet.saved.includes(user._id)) {
+            throw new BadRequestException('You have already saved this tweet');
+        }
+        tweet.saved.push(user._id);
+        try {
+            await tweet.save();
+        }
+        catch (error) {
+            throw new BadRequestException(error);
+        }
+    }
+
     async reTweet(tweetId: string, user: UserDocument) {
         const tweet = await this.getTweet(tweetId, user);
         if (!tweet) {
             throw new BadRequestException('Tweet not found');
         }
-
-        console.log('tweet: ', tweet);
-        console.log('user: ', user);
 
         if (tweet?.author?._id.toString() === user?._id?.toString() || tweet?.retweetedBy?._id?.toString() === user?._id?.toString()) {
             throw new BadRequestException('You can not re-tweet your own tweet');
@@ -185,6 +201,7 @@ export class TweetService {
         });
 
         try {
+            await tweet.save();
             const response = await newTweet.save();
             return response;
         }
@@ -193,7 +210,7 @@ export class TweetService {
         }
     }
 
-    async getMostPopularTweets(user: UserDocument, option: QueryOption): Promise<TweetDocument[]> {
+    async getMostPopularTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
         const following = user.following;
         const conditions = {
             $or: [
@@ -203,17 +220,42 @@ export class TweetService {
             ]
         }
 
-        option.sort = {
-            ...option.sort,
-            likes: -1
-        }
+        const data = await this.tweetModel.aggregate([
+            {
+                $addFields: { likes_count: { $size: { "$ifNull": ["$likes", []] } } }
+            },
+            {
+                $sort: { "likes_count": -1 }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "author"
+                }
+            },
+            {
+                $unwind: "$author"
+            },
+            {
+                $match: conditions
+            },
+        ])
+            .skip(option.skip)
+            .limit(option.limit)
+            .exec();
 
-        const tweets = await this.findAll(option, conditions);
+        await this.tweetModel.populate(data, {
+            path: 'retweetedBy',
+            select: '_id name'
+        })
 
-        return this.findAll(option, conditions);
+        const total = await this.tweetModel.countDocuments(conditions);
+        return { data, total };
     }
 
-    async getLatestTweets(user: UserDocument, option: QueryOption): Promise<TweetDocument[]> {
+    async getLatestTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
         const following = user.following;
         const conditions = {
             $or: [
@@ -228,7 +270,19 @@ export class TweetService {
             modifiedAt: -1
         }
 
-        return this.findAll(option, conditions);
+        const data = await this.findAll(option, conditions);
+        const total = await this.count({ conditions });
+
+        return { data, total };
+    }
+
+    async getSavedTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
+        const conditions = {
+            saved: user._id
+        }
+        const data = await this.findAll(option, conditions);
+        const total = await this.count({ conditions });
+        return { data, total }
     }
 
     count({ conditions }: { conditions?: any } = {}): Promise<number> {

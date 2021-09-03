@@ -23,8 +23,8 @@ export class UserRepository {
         return this.userModel
             .findById(id)
             .select({ password: 0 })
-            .populate('follower', '_id name avatar bio')
-            .populate('following', '_id name avatar bio')
+            .populate('followers', '_id name avatar bio followers following')
+            .populate('following', '_id name avatar bio followers following')
             .exec();
     }
 

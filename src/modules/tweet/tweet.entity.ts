@@ -41,6 +41,9 @@ export class Tweet {
     likes: UserDocument[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
+    saved: UserDocument[];
+
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     retweeted: UserDocument[];
 
     @Prop({ type: MongoSchema.Types.ObjectId, ref: User.name })

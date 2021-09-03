@@ -7,7 +7,6 @@ import { Schema as MongoSchema } from 'mongoose';
 // constants
 import { EGender } from "src/config/constants";
 import { USER_CONST } from "./user.constants";
-import { TweetDocument, TWEET_MODEL } from "../tweet/tweet.entity";
 
 export const USER_MODEL = "users";
 
@@ -138,24 +137,11 @@ export class User {
     @Prop()
     jti: string;
 
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
-    tweets: TweetDocument[];
-
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
-    liked: TweetDocument[];
-
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
-    comments: TweetDocument[];
-
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: TWEET_MODEL }] })
-    saved: TweetDocument[];
-
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     followers: UserDocument[];
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     following: UserDocument[];
-
 
     comparePassword: (password: string) => Promise<boolean>;
     checkPasswordConfirm: () => boolean;

@@ -35,6 +35,16 @@ export class TweetController {
         return ResponseTool.GET_OK(data, total);
     }
 
+    @Get('/user/saved')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getMySavedTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getSavedTweets(user, query.options);
+        return ResponseTool.GET_OK(data, total);
+    }
+
+
     @Get('/user/:userId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
@@ -44,13 +54,14 @@ export class TweetController {
         return ResponseTool.GET_OK(data, total);
     }
 
+
     @Get('/popular')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
     async getPopularTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const data = await this.tweetService.getMostPopularTweets(user, query.options);
-        return ResponseTool.GET_OK(data);
+        const { data, total } = await this.tweetService.getMostPopularTweets(user, query.options);
+        return ResponseTool.GET_OK(data, total);
     }
 
     @Get('/latest')
@@ -58,8 +69,8 @@ export class TweetController {
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
     async getLatestTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const data = await this.tweetService.getLatestTweets(user, query.options);
-        return ResponseTool.GET_OK(data);
+        const { data, total } = await this.tweetService.getLatestTweets(user, query.options);
+        return ResponseTool.GET_OK(data, total);
     }
 
     @Get('/:tweetId')
@@ -98,5 +109,12 @@ export class TweetController {
     @UseGuards(MyTokenAuthGuard)
     async retweetTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
         return ResponseTool.POST_OK(await this.tweetService.reTweet(tweetId, user));
+    }
+
+    @Post('/save/:tweetId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    async saveTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(await this.tweetService.saveTweet(tweetId, user));
     }
 }

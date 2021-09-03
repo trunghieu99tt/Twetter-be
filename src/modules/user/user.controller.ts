@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ApiQueryGetMany, QueryGet } from 'src/common/decorators/common.decorator';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
+import { QueryPostOption } from 'src/tools/request.tool';
 import { ResponseTool } from 'src/tools/response.tool';
 import { GetUser } from './decorator/getUser.decorator';
 import { RegisterUserDTO } from './dto/registerUser.dto';
@@ -31,6 +33,15 @@ export class UserController {
         return ResponseTool.GET_OK(user)
     }
 
+    @Get('/popular')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiOkResponse({ type: ResponseDTO })
+    @ApiQueryGetMany()
+    async getPopularUsers(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        return ResponseTool.GET_OK(await this.userService.getPopularUsers(user, query.options))
+    }
+
     @Get('/:userId')
     @ApiOkResponse({ type: UserDTO })
     async getUserById(@Param('userId') userId: string): Promise<ResponseDTO> {
@@ -52,13 +63,4 @@ export class UserController {
     async followUser(@GetUser() user: UserDocument, @Param('userId') userToFollowId: string): Promise<ResponseDTO> {
         return ResponseTool.POST_OK(await this.userService.followUser(user, userToFollowId))
     }
-
-    @Post('/save/:tweetId')
-    @ApiBearerAuth()
-    @UseGuards(MyTokenAuthGuard)
-    @ApiCreatedResponse({ type: ResponseDTO })
-    async saveTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
-        return ResponseTool.POST_OK(await this.userService.saveTweet(tweetId, user))
-    }
-
 }

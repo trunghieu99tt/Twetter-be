@@ -17,7 +17,6 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 
 // constants
 import { MSG } from 'src/config/constants';
-import { UserDTO } from './dto/user.dto';
 import { MongoError } from 'mongodb';
 import { TweetService } from '../tweet/tweet.service';
 
@@ -125,21 +124,26 @@ export class UserService {
         }
     }
 
-    async saveTweet(tweetId: string, user: UserDocument) {
-        const tweet = await this.tweetService.getTweet(tweetId, user);
-        try {
-            if (tweet) {
-                user.saved.push(tweet);
-                await user.save();
-                return user;
+    async getPopularUsers(user: UserDocument, option: QueryOption): Promise<UserDocument[]> {
+        // return data sorted by length of followers array
+        const data = await this.userModel.aggregate([
+            {
+                $addFields: { followers_count: { $size: { "$ifNull": ["$followers", []] } } }
+            },
+            {
+                $sort: { "followers_count": -1 }
+            },
+            {
+                $match: {
+                    _id: { $ne: user._id },
+                    followers: { $ne: user._id }
+                }
             }
-            else {
-                throw new BadRequestException(UserService.name, "Tweet not found");
-            }
-        } catch (error) {
-            throw new BadRequestException(error);
-        }
+        ])
+            .skip(option.skip)
+            .limit(option.limit)
+            .exec();
+        await this.userModel.populate(data, { path: 'followers', select: '_id' });
+        return data;
     }
-
-
 }
