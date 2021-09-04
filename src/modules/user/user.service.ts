@@ -30,6 +30,7 @@ export class UserService {
     ) { }
 
     async validateUsernameOrEmail(username: string): Promise<boolean> {
+        console.log('username: ', username);
         return (
             /^[A-Za-z0-9._-]{4,64}$/g.test(username) || // username
             /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/g.test(

@@ -29,7 +29,6 @@ export class User {
     @Prop({
         type: String,
         index: true,
-        required: true,
         trim: true,
     })
     bio: string;

@@ -89,10 +89,16 @@ export class AuthService {
     async googleLogin(tokenId: string): Promise<AccessTokenResponse> {
         const client = new OAuth2Client(GOOGLE_CLIENT_ID);
         const response = await client.verifyIdToken({ idToken: tokenId, audience: GOOGLE_CLIENT_ID });
+        console.log(`response.payload`, response.payload)
         const { email_verified, name, email, given_name, family_name, sub, picture } = response.payload;
 
         if (email_verified) {
-            const user = await this.userService.findByUsernameOrEmail(email);
+            let user = null;
+            try {
+                user = await this.userService.findByUsernameOrEmail(email);
+            } catch (error) {
+
+            }
             if (user) {
                 // If user with email already exists, return user data and access token
                 const accessToken = await this.generateAccessToken(user._id, Date.now());
@@ -112,7 +118,7 @@ export class AuthService {
                     const newUser = await this.userService
                         .createUser(
                             {
-                                username: `${name}-${new Date().getTime()}`,
+                                username: `${email}-${new Date().getTime()}`,
                                 password: initialPassword,
                                 name: `${family_name} ${given_name}`,
                                 avatar: picture,
@@ -192,7 +198,7 @@ export class AuthService {
                 const newUser = await this.userService
                     .createUser(
                         {
-                            username: `${name}-${new Date().getTime()}`,
+                            username: `${email}-${new Date().getTime()}`,
                             password: initialPassword,
                             name: `${name}`,
                             avatar: avatar_url,
