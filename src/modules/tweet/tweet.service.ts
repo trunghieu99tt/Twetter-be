@@ -296,6 +296,14 @@ export class TweetService {
         return this.findAllAndCount(option, conditions);
     }
 
+    async getLikedTweets(userId: string, option: QueryOption): Promise<ResponseDTO> {
+        const user = await this.userService.findById(userId);
+        const conditions = {
+            likes: user._id
+        }
+        return this.findAllAndCount(option, conditions);
+    }
+
     count({ conditions }: { conditions?: any } = {}): Promise<number> {
         return Object.keys(conditions || {}).length > 0
             ? this.tweetModel.countDocuments(conditions).exec()

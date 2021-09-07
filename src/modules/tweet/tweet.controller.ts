@@ -44,6 +44,15 @@ export class TweetController {
         return ResponseTool.GET_OK(data, total);
     }
 
+    @Get('/liked/:userId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getMyLikedTweets(@Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getSavedTweets(userId, query.options);
+        return ResponseTool.GET_OK(data, total);
+    }
+
 
     @Get('/user/:userId')
     @ApiBearerAuth()
