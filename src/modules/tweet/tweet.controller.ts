@@ -49,10 +49,9 @@ export class TweetController {
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
     async getMyLikedTweets(@Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getSavedTweets(userId, query.options);
+        const { data, total } = await this.tweetService.getLikedTweets(userId, query.options);
         return ResponseTool.GET_OK(data, total);
     }
-
 
     @Get('/user/:userId')
     @ApiBearerAuth()
@@ -62,7 +61,6 @@ export class TweetController {
         const { data, total } = await this.tweetService.getTweetsByUser(userId, query.options);
         return ResponseTool.GET_OK(data, total);
     }
-
 
     @Get('/popular')
     @ApiBearerAuth()
@@ -79,6 +77,15 @@ export class TweetController {
     @ApiQueryGetMany()
     async getLatestTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
         const { data, total } = await this.tweetService.getLatestTweets(user, query.options);
+        return ResponseTool.GET_OK(data, total);
+    }
+
+    @Get('/medias')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getMedias(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getMedias(user, query.options);
         return ResponseTool.GET_OK(data, total);
     }
 

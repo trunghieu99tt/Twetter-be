@@ -129,7 +129,7 @@ export class TweetService {
         const isRetweet = tweet?.isRetweet || false;
 
         const retweetedById = tweet?.isRetweet && tweet?.retweetedBy?._id?.toString() || "";
-        if (userId !== tweetAuthorId || (isRetweet && userId !== retweetedById)) {
+        if (userId === tweetAuthorId || (isRetweet && userId === retweetedById)) {
             return tweet;
         }
         return null;
@@ -151,10 +151,11 @@ export class TweetService {
 
     // delete a tweet
     async deleteTweet(id: string, user: UserDocument): Promise<any> {
-        const isAuthor = await this.hasPermission(user, id);
-        if (!isAuthor) {
+        const tweet = await this.hasPermission(user, id);
+        if (!tweet) {
             throw new BadRequestException('You have no permission to delete this tweet');
         }
+        console.log(`tweet`, tweet)
         await this.tweetModel.findByIdAndRemove(id).exec();
     }
 
@@ -304,10 +305,68 @@ export class TweetService {
         return this.findAllAndCount(option, conditions);
     }
 
+    async getMedias(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
+        const following = user.following;
+        const conditions = {
+            $or: [
+                { audience: 0 },
+                { author: { $in: following } },
+                { author: user }
+            ]
+        }
+
+        const aggregation = [
+            {
+                $addFields: { media_count: { $size: { "$ifNull": ["$media", []] } } }
+            },
+            {
+                $sort: { "likes_count": -1 }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "_id",
+                    as: "author"
+                }
+            },
+            {
+                $unwind: "$author"
+            },
+            {
+                $match: {
+                    ...conditions,
+                    media_count: { $gt: 0 }
+                }
+            },
+        ];
+
+        const data = await this.tweetModel.aggregate(aggregation)
+            .skip(option.skip)
+            .limit(option.limit)
+            .exec();
+
+        await this.tweetModel.populate(data, {
+            path: 'retweetedBy',
+            select: '_id name'
+        })
+
+        const dataTotal = await this.tweetModel.aggregate([
+            ...aggregation,
+            {
+                $count: 'total'
+            }
+        ]).exec();
+
+        console.log('dataTotal: ', dataTotal)
+
+        const total = dataTotal?.[0]?.total || 0;
+        return { data, total };
+    }
+
     count({ conditions }: { conditions?: any } = {}): Promise<number> {
         return Object.keys(conditions || {}).length > 0
             ? this.tweetModel.countDocuments(conditions).exec()
             : this.tweetModel.estimatedDocumentCount().exec();
     }
-
 }
