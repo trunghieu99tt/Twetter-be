@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
-import { PRODUCTION, PROJECT_NAME, PROJECT_VERSION, SERVER_PORT, SWAGGER_PATH } from './config/env';
+import { PRODUCTION, PROJECT_NAME, PROJECT_VERSION, PORT, SWAGGER_PATH } from './config/env';
 import { MongoTool } from './tools/mongo.tool';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
@@ -48,8 +48,8 @@ async function bootstrap() {
 
 	app.enableCors();
 
-	await app.listen(SERVER_PORT);
+	await app.listen(PORT);
 
-	console.log('Server running on port: ' + SERVER_PORT);
+	console.log('Server running on port: ' + PORT);
 }
 bootstrap();
