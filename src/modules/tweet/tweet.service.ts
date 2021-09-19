@@ -155,7 +155,6 @@ export class TweetService {
         if (!tweet) {
             throw new BadRequestException('You have no permission to delete this tweet');
         }
-        console.log(`tweet`, tweet)
         await this.tweetModel.findByIdAndRemove(id).exec();
     }
 

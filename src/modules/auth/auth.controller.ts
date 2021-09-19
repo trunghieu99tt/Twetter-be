@@ -36,6 +36,7 @@ export class AuthController {
         type: AccessTokenResponse
     })
     async googleAuth(@Body('tokenId') tokenId: string): Promise<AccessTokenResponse> {
+        console.log('tokenId: ', tokenId);
         return this.authService.googleLogin(tokenId);
     }
 

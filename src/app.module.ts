@@ -7,6 +7,7 @@ import { UserModule } from './modules/user/user.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TokenModule } from './modules/token/token.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { TokenModule } from './modules/token/token.module';
     UserModule,
     UploadModule,
     AuthModule,
-    TokenModule
+    TokenModule,
+    ChatModule,
   ],
   controllers: [],
   providers: [],
