@@ -22,68 +22,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     async handleDisconnect(client: any) {
-        const jwt = client.handshake.query.token;
-        if (jwt) {
-            const auth: any = await this.jwtService.verify(
-                jwt
-            );
-            const { sub } = auth;
-            const user = await this.userService.findById(sub);
-            if (user) {
-                const onlineUsers = this.connectedUsers.filter((userItem: UserDocument) => userItem._id.toString() !== user._id.toString());
-                this.connectedUsers = onlineUsers;
-            }
-            this.server.emit('users', this.connectedUsers);
-        }
     }
 
 
     async handleConnection(client: any, ...args: any[]) {
-        const jwt = client.handshake.query.token;
+    }
 
-        if (jwt) {
-
-            const auth: any = await this.jwtService.verify(
-                jwt
-            );
-
-            const { sub } = auth;
-            const user = await this.userService.findById(sub);
-
-            if (!user) {
-                throw new UnauthorizedException();
-            }
-
-
-            const existedUser = this.connectedUsers.find((e: UserDocument) => {
-                return JSON.stringify(user._id) == JSON.stringify(e._id);
-            });
-
-            if (!existedUser) {
-                this.connectedUsers = [... new Set([
-                    ...this.connectedUsers,
-                    user
-                ])];
-                this.server.emit('users', this.connectedUsers);
-            }
+    @SubscribeMessage('userOn')
+    addUser(@MessageBody() body: any) {
+        if (!this.connectedUsers?.some((user: UserDocument) => user._id === body._id)) {
+            this.connectedUsers.push(body);
         }
+        this.server.emit('users', this.connectedUsers);
+    }
+
+    @SubscribeMessage('userOff')
+    removeUser(@MessageBody() body: any) {
+        console.log('user off: ', body);
+        this.connectedUsers = this.connectedUsers.filter((user: UserDocument) => user._id !== body._id);
+        this.server.emit('users', this.connectedUsers);
     }
 
     @SubscribeMessage('addMessage')
     async handleAddMessage(@MessageBody() body: any) {
-        const username = body.username;
-        const user = this.connectedUsers.find(e => e.username === username);
-        await this.roomService.addMessage(body.roomID, {
-            content: body.content
-        }, user, body.file);
-        const publicRoom = await this.roomService.getRooms();
-        const privateRoom = await this.roomService.getRooms(user);
-        this.rooms = [
-            ...publicRoom,
-            ...privateRoom
-        ]
-        Logger.debug(`this.rooms: ${this.rooms}`)
-        this.server.emit('rooms', this.rooms);
     }
 
     @SubscribeMessage('createRoom')
@@ -105,20 +66,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
      */
     @SubscribeMessage('joinRoom')
     async handleJoinNewRoom(@MessageBody() body: any) {
-        const { username, roomID } = body;
-        const idx = this.connectedUsers.findIndex((e: User) => e.username === username);
-
-        if (idx !== -1) {
-            const user = this.connectedUsers[idx];
-            await this.roomService.addMember(roomID, user);
-            const publicRoom = await this.roomService.getRooms();
-            const privateRoom = await this.roomService.getRooms(user);
-            this.rooms = [
-                ...publicRoom,
-                ...privateRoom
-            ]
-            this.server.emit('rooms', this.rooms);
-        }
+        console.log('body: ', body);
     }
 
 }

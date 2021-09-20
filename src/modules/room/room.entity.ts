@@ -38,9 +38,6 @@ export class Room {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
     owner: UserDocument;
 
-    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: Message.name }] })
-    messages: Message[];
-
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: User.name }] })
     members: UserDocument[];
 }

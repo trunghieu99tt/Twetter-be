@@ -5,6 +5,7 @@ import { removeDuplicateObjectInArray } from "src/common/utils/helper";
 import { QueryOption } from "src/tools/request.tool";
 import { MessageService } from "../message/message.service";
 import { UserDocument } from "../user/user.entity";
+import { UserService } from "../user/user.service";
 import { RoomDTO } from "./dto/create-room.dto";
 import { Room, RoomDocument } from "./room.entity";
 
@@ -15,6 +16,7 @@ export class RoomService {
         @InjectModel(Room.name)
         private readonly roomModel: Model<RoomDocument>,
         private readonly messageService: MessageService,
+        private readonly userService: UserService,
     ) { }
 
 
@@ -64,17 +66,6 @@ export class RoomService {
         return room;
     }
 
-
-    async addMessage(roomID: string, body: any, user: UserDocument, file: string | null = null) {
-        const room = await this.findById(roomID);
-        if (!room) {
-            throw new NotFoundException("Room not found!");
-        }
-        const newMessage = await this.messageService.createMessage(user, body, roomID, file);
-        room.messages.push(newMessage);
-        await room.save();
-    }
-
     async addMember(roomID: string, user: UserDocument) {
         const room = await this.findById(roomID);
         if (!room) {
@@ -102,7 +93,7 @@ export class RoomService {
         await this.roomModel.findByIdAndUpdate(id, updateRoomDto);
     }
 
-    async getRooms(owner: UserDocument | null = null) {
+    async getRoomsByUser(owner: UserDocument | null = null) {
         const options = owner ? {
             isPrivate: true,
             owner
@@ -121,6 +112,30 @@ export class RoomService {
         }).populate({
             path: 'members'
         }).exec();
+    }
+
+    async getDMRoomOfUser(userAId: string, userBId: string) {
+        const userA = await this.userService.findById(userAId);
+        const userB = await this.userService.findById(userBId);
+        const room = await this.roomModel.findOne({
+            $or: [
+                {
+                    owner: userA,
+                    members: userB,
+                    isDm: true,
+                },
+                {
+                    owner: userB,
+                    members: userA,
+                    isDm: true,
+                }
+            ]
+        }).exec();
+
+        if (!room) {
+            throw new NotFoundException("Room not found!");
+        }
+        return room;
     }
 
     async deleteRoom(id: string) {

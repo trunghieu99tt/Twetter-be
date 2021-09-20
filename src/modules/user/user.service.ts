@@ -19,6 +19,7 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 import { MSG } from 'src/config/constants';
 import { MongoError } from 'mongodb';
 import { TweetService } from '../tweet/tweet.service';
+import { assertResolveFunctionsPresent } from 'graphql-tools';
 
 
 @Injectable()
@@ -86,17 +87,17 @@ export class UserService {
             newUserInfo.password = await bcrypt.hash(newUserInfo.password, 10);
         }
 
-        Object.assign(user, newUserInfo);
-
-        return user
-            .save()
-            .then((result: UserDocument) => {
-                result.password = undefined;
-                return result;
+        try {
+            const response = await this.userModel.findOneAndUpdate({
+                _id: user._id
+            }, newUserInfo, {
+                new: true,
             })
-            .catch((err: MongoError) => {
-                throw new BadRequestException(err);
-            });
+
+            return response;
+        } catch (error) {
+            throw new BadRequestException(error);
+        }
     }
 
     async findByGoogleId(id: string): Promise<UserDocument> {

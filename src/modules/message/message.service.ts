@@ -36,11 +36,10 @@ export class MessageService {
         return await this.messageModel.findById(id);
     }
 
-    async createMessage(user: UserDocument, messageDto: CreateMessageDTO, receiveUserId: string, file: string = ''): Promise<MessageDocument> {
-        const sentToUser = await this.userService.findById(receiveUserId);
+    async createMessage(user: UserDocument, messageDto: CreateMessageDTO, roomId: string, file: string = ''): Promise<MessageDocument> {
         const message = new Message();
         message.sentBy = user;
-        message.sentTo = sentToUser;
+        message.roomId = roomId;
         message.createdAt = new Date();
         message.content = messageDto.content;
 
@@ -52,21 +51,11 @@ export class MessageService {
         return response;
     }
 
-    async getMessages(userId: string, friendId: string, option: QueryOption): Promise<ResponseDTO> {
+    async getMessages(userId: string, roomId: string, option: QueryOption): Promise<ResponseDTO> {
         const conditions = {
-            $or: [
-                {
-                    $and: [
-                        { sentBy: userId },
-                        { sentTo: friendId },
-                    ],
-                },
-                {
-                    $and: [
-                        { sentBy: friendId },
-                        { sentTo: userId },
-                    ],
-                },
+            $and: [
+                { sentBy: userId },
+                { roomId: roomId },
             ],
         };
 
