@@ -8,19 +8,19 @@ import { Room, RoomDocument } from "../room/room.entity";
     toJSON: { virtuals: true },
 })
 export class Message {
-    @Prop()
+    @Prop(String)
     content: string;
 
-    @Prop()
+    @Prop(String)
     file?: string;
 
-    @Prop()
+    @Prop(Date)
     createdAt: Date;
 
     @Prop({ type: MongoSchema.Types.ObjectId, ref: User.name })
-    sentBy: UserDocument | MongoSchema.Types.ObjectId;
+    author: UserDocument;
 
-    @Prop()
+    @Prop(String)
     roomId: string;
 
 }

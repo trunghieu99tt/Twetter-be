@@ -14,7 +14,7 @@ export class RoomService {
 
     constructor(
         @InjectModel(Room.name)
-        private readonly roomModel: Model<RoomDocument>,
+        private roomModel: Model<RoomDocument>,
         private readonly messageService: MessageService,
         private readonly userService: UserService,
     ) { }
@@ -29,40 +29,59 @@ export class RoomService {
     }
 
     async findById(id: string) {
-        return await this.roomModel.findById(id).exec();
+        return await this.roomModel.findById(id).populate(
+            {
+                path: 'members',
+            }
+        ).exec();
     }
 
-    async createRoom(roomDto: RoomDTO, user: UserDocument): Promise<RoomDocument> {
-        const newRoom = new this.roomModel({
-            ...roomDto,
-            owner: user,
-            messages: [],
-            members: [user],
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        } as Room);
-        return await newRoom.save();
+    async createRoom(roomDto: RoomDTO, users: string[]): Promise<RoomDocument> {
+        const usersLists = await Promise.all(users.map(async userId => {
+            return await this.userService.findById(userId);
+        }));
+
+        if (usersLists?.length > 0) {
+            const newRoomObj = {
+                ...roomDto,
+                owner: usersLists[0],
+                members: usersLists,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                isDm: users.length === 2
+            }
+            const newRoom = new this.roomModel(newRoomObj);
+            console.log(`newRoom`, newRoom)
+
+            return await newRoom.save();
+        } else {
+            throw new BadRequestException("Users not found!");
+        }
     }
 
-    async findDmRoom(owner: UserDocument, guest: UserDocument) {
+    async findDmRoom(userIdA: string, userIdB: string): Promise<RoomDocument> {
+        const [userA, userB] = await Promise.all([userIdA, userIdB].map(async userId => {
+            return await this.userService.findById(userId)
+        }))
+
+        // check if userA and userB are in the same room
         const room = await this.roomModel.findOne({
             $or: [
                 {
-                    owner: owner,
-                    members: guest,
+                    owner: userA,
+                    members: userB,
                     isDm: true,
                 },
                 {
-                    owner: guest,
-                    members: owner
+                    owner: userB,
+                    members: userA,
+                    isDm: true,
                 }
             ]
+        }).populate({
+            path: "members"
         }).exec();
 
-
-        if (!room) {
-            throw new NotFoundException("Room not found!");
-        }
         return room;
     }
 

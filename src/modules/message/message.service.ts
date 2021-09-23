@@ -1,9 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { ObjectId } from "mongodb";
 import { Model } from "mongoose";
 import { ResponseDTO } from "src/common/dto/response.dto";
 import { QueryOption } from "src/tools/request.tool";
-import { User, UserDocument } from "../user/user.entity";
+import { UserDocument } from "../user/user.entity";
 import { UserService } from "../user/user.service";
 import { CreateMessageDTO } from "./dto/create-message.dto";
 import { Message, MessageDocument } from "./message.entity";
@@ -21,9 +22,13 @@ export class MessageService {
     async findAll(option: QueryOption, conditions: any = {}): Promise<MessageDocument[]> {
         return this.messageModel
             .find(conditions)
-            .sort(option.sort)
+            .sort({
+                ...option.sort,
+                createdAt: -1,
+            })
             .skip(option.skip)
             .limit(option.limit)
+            .populate("author", "_id name avatar")
     }
 
 
@@ -36,28 +41,21 @@ export class MessageService {
         return await this.messageModel.findById(id);
     }
 
-    async createMessage(user: UserDocument, messageDto: CreateMessageDTO, roomId: string, file: string = ''): Promise<MessageDocument> {
-        const message = new Message();
-        message.sentBy = user;
-        message.roomId = roomId;
-        message.createdAt = new Date();
-        message.content = messageDto.content;
-
-        if (file) {
-            message.file = file;
-        }
-        const newMessage = new this.messageModel(message);
-        const response = await newMessage.save();
-        return response;
+    async createMessage(messageDto: CreateMessageDTO, roomId: string): Promise<MessageDocument> {
+        const newMessage = new this.messageModel({
+            ...messageDto,
+            roomId: roomId,
+            createdAt: new Date(),
+        });
+        return newMessage.save();
     }
 
-    async getMessages(userId: string, roomId: string, option: QueryOption): Promise<ResponseDTO> {
+    async getRoomMessages(roomId: string, option: QueryOption): Promise<ResponseDTO> {
         const conditions = {
-            $and: [
-                { sentBy: userId },
-                { roomId: roomId },
-            ],
+            roomId: new ObjectId(roomId),
         };
+
+        console.log('conditions: ', conditions)
 
         const data = await this.findAll(option, conditions);
         const total = await this.count({ conditions });

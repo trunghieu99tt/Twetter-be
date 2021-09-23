@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsString } from "class-validator";
+import { IsBoolean, IsDate, IsString } from "class-validator";
 import * as mongoose from 'mongoose';
-import { Message } from "../message/message.entity";
 import { User, UserDocument } from "../user/user.entity";
 
 @Schema({
@@ -11,9 +10,16 @@ import { User, UserDocument } from "../user/user.entity";
     }
 })
 export class Room {
+
+    _id: string;
+
     @IsString()
     @Prop()
     name: string;
+
+    @IsString()
+    @Prop()
+    roomId: string;
 
     @IsString()
     @Prop()
@@ -23,16 +29,20 @@ export class Room {
     @Prop()
     image: string;
 
-    @Prop()
+    @IsDate()
+    @Prop(Date)
     createdAt: Date
 
-    @Prop()
+    @IsDate()
+    @Prop(Date)
     updatedAt: Date;
 
-    @Prop()
+    @IsBoolean()
+    @Prop(Boolean)
     isPrivate: boolean;
 
-    @Prop()
+    @IsBoolean()
+    @Prop(Boolean)
     isDm: boolean;
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })

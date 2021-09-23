@@ -9,7 +9,6 @@ export class RoomDTO {
     @IsNotEmpty()
     description: string;
 
-
     @IsBoolean()
     isDm: boolean;
 
