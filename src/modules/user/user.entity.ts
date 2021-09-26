@@ -142,6 +142,10 @@ export class User {
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     following: UserDocument[];
 
+    callingId: string;
+
+    socketId: string;
+
     comparePassword: (password: string) => Promise<boolean>;
     checkPasswordConfirm: () => boolean;
 }

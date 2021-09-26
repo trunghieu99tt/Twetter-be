@@ -3,7 +3,8 @@ import * as morgan from 'morgan';
 import { AppModule } from './app.module';
 import { PRODUCTION, PROJECT_NAME, PROJECT_VERSION, PORT, SWAGGER_PATH } from './config/env';
 import { MongoTool } from './tools/mongo.tool';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import peerConnection from 'src/modules/chat/chat.peerjs'
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
@@ -51,5 +52,7 @@ async function bootstrap() {
 	await app.listen(PORT);
 
 	console.log('Server running on port: ' + PORT);
+
+	// peerConnection(app);
 }
 bootstrap();
