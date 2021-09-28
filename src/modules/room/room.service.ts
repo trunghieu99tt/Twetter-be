@@ -112,24 +112,18 @@ export class RoomService {
         await this.roomModel.findByIdAndUpdate(id, updateRoomDto);
     }
 
-    async getRoomsByUser(owner: UserDocument | null = null) {
-        const options = owner ? {
-            isPrivate: true,
-            owner
-        } : {
-            isPrivate: false
-        };
-
-        return await this.roomModel.find(options).populate({
-            path: 'messages',
-            populate:
-            {
-                path: 'author'
-            }
+    async getRoomByUser(user: UserDocument) {
+        return await this.roomModel.find({
+            $or: [
+                {
+                    owner: user,
+                },
+                {
+                    members: user,
+                }
+            ]
         }).populate({
-            path: 'owner'
-        }).populate({
-            path: 'members'
+            path: "members"
         }).exec();
     }
 

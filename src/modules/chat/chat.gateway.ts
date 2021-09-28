@@ -126,7 +126,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('userOff')
     removeUser(@MessageBody() body: any) {
-        console.log('user off: ', body);
         this.connectedUsers = this.connectedUsers.filter((user: UserDocument) => user._id !== body._id);
         this.server.emit('users', this.connectedUsers);
     }
@@ -136,7 +135,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (body) {
             const roomId = body.roomId;
             try {
-                const room = await this.getDMRoomById(roomId);
+
+                let room = null;
+
+                // 1. check if room is in connected rooms
+                room = this.connectedRooms.find((room: RoomDocument) => room._id.toString() === roomId);
+
+                // 2. if not, get room from db and add it to connected rooms
+                if (!room) {
+                    room = await this.getDMRoomById(roomId);
+                }
 
                 const newMessage = await this.messageService.createMessage(body, room._id);
                 // Emit event to all users in that room if they're online
@@ -174,7 +182,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const userIds = body?.userIds;
         if (userIds?.length === 2) {
             const room = await this.getDMRoomByUsers(userIds[0], userIds[1]);
-            console.log(`room`, room)
             this.server.emit('joinDmRoom', room);
         }
     }
