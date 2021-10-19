@@ -22,7 +22,7 @@ export class UserController {
         type: UserDTO
     })
     async createUser(@Body() user: RegisterUserDTO): Promise<ResponseDTO> {
-        return ResponseTool.CREATED(await this.userService.createUser(user as User))
+        return ResponseTool.CREATED(await this.userService.createUser(user as User));
     }
 
     @Get('/me')
@@ -30,7 +30,7 @@ export class UserController {
     @UseGuards(MyTokenAuthGuard)
     @ApiOkResponse({ type: ResponseDTO })
     async getMyProfile(@GetUser() user: User): Promise<ResponseDTO> {
-        return ResponseTool.GET_OK(user)
+        return ResponseTool.GET_OK(user);
     }
 
     @Get('/popular')
@@ -39,7 +39,8 @@ export class UserController {
     @ApiOkResponse({ type: ResponseDTO })
     @ApiQueryGetMany()
     async getPopularUsers(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        return ResponseTool.GET_OK(await this.userService.getPopularUsers(user, query.options))
+        console.log('Go here');
+        return ResponseTool.GET_OK(await this.userService.getPopularUsers(user, query.options));
     }
 
     @Get('/:userId')
@@ -53,7 +54,7 @@ export class UserController {
     @UseGuards(MyTokenAuthGuard)
     @ApiOkResponse({ type: ResponseDTO })
     async updateMyProfile(@GetUser() oldUser, @Body() newUserInfo: UpdateUserDTO): Promise<ResponseDTO> {
-        return ResponseTool.PATCH_OK(await this.userService.updateUser(oldUser.username, newUserInfo))
+        return ResponseTool.PATCH_OK(await this.userService.updateUser(oldUser.username, newUserInfo));
     }
 
     @Post('/follow/:userId')
@@ -61,6 +62,6 @@ export class UserController {
     @UseGuards(MyTokenAuthGuard)
     @ApiCreatedResponse({ type: ResponseDTO })
     async followUser(@GetUser() user: UserDocument, @Param('userId') userToFollowId: string): Promise<ResponseDTO> {
-        return ResponseTool.POST_OK(await this.userService.followUser(user, userToFollowId))
+        return ResponseTool.POST_OK(await this.userService.followUser(user, userToFollowId));
     }
 }

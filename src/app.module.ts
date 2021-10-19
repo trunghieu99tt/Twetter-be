@@ -8,6 +8,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { TokenModule } from './modules/token/token.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { StoryModule } from './modules/story/story.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ChatModule } from './modules/chat/chat.module';
     AuthModule,
     TokenModule,
     ChatModule,
+    StoryModule
   ],
   controllers: [],
   providers: [],

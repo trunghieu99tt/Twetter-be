@@ -17,6 +17,6 @@ export class UploadController {
     @ApiFile("image")
     @UseInterceptors(FileInterceptor('image', UploadTool.imageUpload))
     uploadImage(@UploadedFile() fileUpload: any): Promise<{ url: string }> {
-        return this.uploadService.uploadSingleImage(fileUpload);
+        return this.uploadService.uploadSingleMedia(fileUpload);
     }
 }

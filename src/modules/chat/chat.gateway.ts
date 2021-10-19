@@ -48,6 +48,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     async handleConnection(client: any, ...args: any[]) {
+        console.log('client connected: ', client.id);
     }
 
     async getDMRoomByUsers(ownerId: string, guestId: string) {
@@ -84,7 +85,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 isPrivate: true,
                 name: '',
                 image: '',
-            }
+            };
             room = await this.roomService.createRoom(newRoom, [ownerId, guestId]);
         }
 
@@ -116,7 +117,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 user.callingId = callingId;
             }
         });
-    }
+    };
 
     @SubscribeMessage('userOn')
     addUser(@MessageBody() body: any, @ConnectedSocket() client: any) {
@@ -169,7 +170,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.rooms = [
             ...this.rooms,
             newRoom
-        ]
+        ];
         this.server.emit('rooms', this.rooms);
     }
 
@@ -188,7 +189,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('startCall')
     async handleStartCall(@MessageBody() body: any, @ConnectedSocket() client: any) {
-        console.log(`body`, body)
+        console.log(`body`, body);
 
         const { senderId, guestId } = body;
         const guest = this.connectedUsers.find(e => e._id.toString() === guestId);
@@ -227,7 +228,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log('connectedSockets: ', this.connectedUsers.map(e => ({
             socketId: e.socketId,
             userId: e._id.toString(),
-        })))
+        })));
 
         // 2. update call status
         if (guest) {

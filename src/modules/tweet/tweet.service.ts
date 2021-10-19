@@ -44,7 +44,7 @@ export class TweetService {
                 { author: { $in: following } },
                 { author: user }
             ]
-        }
+        };
         return this.findAllAndCount(option, conditions);
     }
 
@@ -55,12 +55,13 @@ export class TweetService {
                 { author: user, isRetweet: false },
                 { retweetedBy: user }
             ]
-        }
+        };
         return this.findAllAndCount(option, conditions);
     }
 
     // create a tweet
     async createTweet(tweetDTO: CreateTweetDTO, user: UserDocument): Promise<TweetDocument> {
+        console.log(`tweetDTO`, tweetDTO);
         const tweet = new this.tweetModel({ ...tweetDTO, createdAt: new Date(), modifiedAt: new Date(), isRetweet: false });
         tweet.author = user;
         try {
@@ -236,7 +237,7 @@ export class TweetService {
                 { author: { $in: following } },
                 { author: user }
             ]
-        }
+        };
 
         const data = await this.tweetModel.aggregate([
             {
@@ -267,7 +268,7 @@ export class TweetService {
         await this.tweetModel.populate(data, {
             path: 'retweetedBy',
             select: '_id name'
-        })
+        });
 
         const total = await this.tweetModel.countDocuments(conditions);
         return { data, total };
@@ -281,18 +282,18 @@ export class TweetService {
                 { author: { $in: following } },
                 { author: user }
             ]
-        }
+        };
         option.sort = {
             ...option.sort,
             modifiedAt: -1
-        }
+        };
         return this.findAllAndCount(option, conditions);
     }
 
     async getSavedTweets(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
         const conditions = {
             saved: user._id
-        }
+        };
         return this.findAllAndCount(option, conditions);
     }
 
@@ -300,7 +301,7 @@ export class TweetService {
         const user = await this.userService.findById(userId);
         const conditions = {
             likes: user._id
-        }
+        };
         return this.findAllAndCount(option, conditions);
     }
 
@@ -312,7 +313,7 @@ export class TweetService {
                 { author: { $in: following } },
                 { author: user }
             ]
-        }
+        };
 
         const aggregation = [
             {
@@ -348,7 +349,7 @@ export class TweetService {
         await this.tweetModel.populate(data, {
             path: 'retweetedBy',
             select: '_id name'
-        })
+        });
 
         const dataTotal = await this.tweetModel.aggregate([
             ...aggregation,
@@ -357,13 +358,12 @@ export class TweetService {
             }
         ]).exec();
 
-        console.log('dataTotal: ', dataTotal)
 
         const total = dataTotal?.[0]?.total || 0;
         return { data, total };
     }
 
-    count({ conditions }: { conditions?: any } = {}): Promise<number> {
+    count({ conditions }: { conditions?: any; } = {}): Promise<number> {
         return Object.keys(conditions || {}).length > 0
             ? this.tweetModel.countDocuments(conditions).exec()
             : this.tweetModel.estimatedDocumentCount().exec();

@@ -1,5 +1,4 @@
 import { MulterOptions } from "@nestjs/platform-express/multer/interfaces/multer-options.interface";
-import { exception } from "console";
 import { CLOUDINARY_PATH, CLOUDINARY_PATH_DEV, DEVELOPMENT } from "src/config/env";
 
 const cloudinary = require("cloudinary").v2;
@@ -11,12 +10,13 @@ export class UploadTool {
     static imagePath: string = !DEVELOPMENT ? CLOUDINARY_PATH : CLOUDINARY_PATH_DEV;
 
     static multerFilter = (req, file, cb) => {
-        if (!file.mimetype.startsWith("image")) {
-            return cb(
-                new exception("Not an image! Please upload only images", 400),
-                false
-            );
-        }
+        console.log(`file.mimetype`, file.mimetype)
+        // if (!file.mimetype.startsWith("image")) {
+        //     return cb(
+        //         new Error("Not an image! Please upload only images"),
+        //         false
+        //     );
+        // }
         cb(null, true);
     };
 
@@ -25,7 +25,7 @@ export class UploadTool {
         fileFilter: UploadTool.multerFilter,
     }
 
-    static uploadPhotoToServer = async (file: any) => {
+    static uploadMediaToServer = async (file: any) => {
         try {
             const response = await cloudinary.uploader.upload(file, {
                 folder: 'Tweeter'
@@ -61,7 +61,7 @@ export class UploadTool {
             await UploadTool.resizeImage(file, width, height, format, quality);
 
             // When we have the file, save it to local storage
-            const uploadResponse = await UploadTool.uploadPhotoToServer(
+            const uploadResponse = await UploadTool.uploadMediaToServer(
                 `${UploadTool.imagePath}/uploader.${format}`
             );
             // remove file in local machine
@@ -88,7 +88,7 @@ export class UploadTool {
             files.map(async (file) => {
                 await UploadTool.resizeImage(file, width, height, format, quality);
 
-                const uploadResponse = await UploadTool.uploadPhotoToServer(
+                const uploadResponse = await UploadTool.uploadMediaToServer(
                     `${UploadTool.imagePath}/uploader.${format}`
                 );
 
@@ -102,5 +102,27 @@ export class UploadTool {
 
         return imagesLink;
     };
+
+    static uploadVideo = async (file: any) => {
+        // write video to disk and upload to cloudinary
+        const filePath = `${UploadTool.imagePath}/uploader.mp4`;
+        const writeStream = fs.createWriteStream(filePath);
+        file.pipe(writeStream);
+        return new Promise((resolve, reject) => {
+            writeStream.on("finish", async () => {
+                try {
+                    const uploadResponse = await UploadTool.uploadMediaToServer(
+                        filePath
+                    );
+                    fs.unlink(filePath, (err) => {
+                        console.log("err", err);
+                    });
+                    resolve(uploadResponse);
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+    }
 
 }

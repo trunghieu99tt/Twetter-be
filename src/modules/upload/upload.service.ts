@@ -3,15 +3,21 @@ import { UploadTool } from '../../common/tool/upload.tool';
 
 @Injectable()
 export class UploadService {
-    async uploadSingleImage(file: any): Promise<{ url: string }> {
+    async uploadSingleMedia(file: any): Promise<{ url: string }> {
         let url = '';
         if (file) {
-            url = await UploadTool.resizeAndUploadSingle(file);
+            if (file?.mimetype === 'video/mp4') {
+                console.log('file: ', file);
+                url = await UploadTool.uploadVideo(file) as string;
+                console.log(`url`, url)
+            } else {
+                url = await UploadTool.resizeAndUploadSingle(file);
+            }
         }
         return { url };
     }
 
-    async uploadMultiImages(files: any): Promise<string[]> {
+    async uploadMultiMedia(files: any): Promise<string[]> {
         let urls = [];
         if (files) {
             urls = await UploadTool.resizeAndUploadMulti(files);

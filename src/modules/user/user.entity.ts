@@ -5,7 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { Schema as MongoSchema } from 'mongoose';
 
 // constants
-import { EGender } from "src/config/constants";
+import { EAudience, EGender } from "src/config/constants";
 import { USER_CONST } from "./user.constants";
 
 export const USER_MODEL = "users";
@@ -131,7 +131,7 @@ export class User {
     };
 
     @Prop()
-    isThirdParty: boolean
+    isThirdParty: boolean;
 
     @Prop()
     jti: string;
@@ -141,6 +141,11 @@ export class User {
 
     @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: User.name }] })
     following: UserDocument[];
+
+    @Prop({
+        enum: Object.values(EAudience)
+    })
+    storyAudience: EAudience;
 
     callingId: string;
 
