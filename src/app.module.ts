@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { TokenModule } from './modules/token/token.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { StoryModule } from './modules/story/story.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { StoryModule } from './modules/story/story.module';
     AuthModule,
     TokenModule,
     ChatModule,
-    StoryModule
+    StoryModule,
+    NotificationModule
   ],
   controllers: [],
   providers: [],

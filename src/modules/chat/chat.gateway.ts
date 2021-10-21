@@ -248,4 +248,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             }
         }
     }
+
+    // notifications
+    @SubscribeMessage('createNotification')
+    async handleCreateNotification(@MessageBody() body: any) {
+        console.log(`body`, body);
+        const receivers = body?.receivers || [];
+        receivers.forEach((id: string) => {
+            console.log(`this.connectedUsers`, this.connectedUsers);
+            console.log(`id`, id);
+            const user = this.connectedUsers.find(e => e._id.toString() === id);
+            console.log(`user`, user);
+            if (user) {
+                this.server.to(user.socketId).emit('newNotification', body);
+            }
+        });
+    }
 }
