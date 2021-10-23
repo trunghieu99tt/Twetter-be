@@ -197,7 +197,7 @@ export class TweetService {
 
     async reTweet(tweetId: string, user: UserDocument) {
         try {
-            const tweet = await this.hasPermission(user, tweetId);
+            const tweet = await this.getTweet(tweetId, user);
             if (!tweet) {
                 throw new BadRequestException('You have no permission to retweet this tweet');
             }
@@ -225,6 +225,7 @@ export class TweetService {
                 throw new BadRequestException(error);
             }
         } catch (error) {
+            console.log(new Date(), 'retweet error: ', error.message);
             throw new BadRequestException(error);
         }
     }
@@ -235,7 +236,6 @@ export class TweetService {
             $or: [
                 { audience: 0 },
                 { author: { $in: following } },
-                { author: user }
             ]
         };
 

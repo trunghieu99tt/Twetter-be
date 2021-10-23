@@ -28,11 +28,8 @@ export class Notification {
     @Prop(String)
     image: string;
 
-    @Prop({
-        type: Boolean,
-        default: false
-    })
-    isRead: boolean;
+    @Prop()
+    isRead: string[];
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
     sender: UserDocument;

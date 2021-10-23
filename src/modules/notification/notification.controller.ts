@@ -46,10 +46,12 @@ export class NotificationController {
     }
 
     @Patch("/read/:id")
+    @UseGuards(MyTokenAuthGuard)
     async read(
+        @GetUser() user: UserDocument,
         @Param('id') id: string,
     ) {
-        const updatedNotification = await this.notificationService.updateReadStatusNotification(id);
+        const updatedNotification = await this.notificationService.updateReadStatusNotification(user._id, id);
         return ResponseTool.PATCH_OK(updatedNotification);
     }
 

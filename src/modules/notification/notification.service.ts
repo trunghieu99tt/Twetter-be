@@ -48,7 +48,7 @@ export class NotificationService {
             const newNotification = new this.notificationModel(notificationDto);
             newNotification.sender = user;
             newNotification.createdAt = new Date();
-            newNotification.isRead = false;
+            newNotification.isRead = [];
             return newNotification.save();
         }
 
@@ -68,14 +68,14 @@ export class NotificationService {
         return response;
     }
 
-    async updateReadStatusNotification(notificationId: string) {
-        const newNotification = await this.notificationModel.findByIdAndUpdate(notificationId, {
-            read: true,
-        }, {
-            new: true
-        }).exec();
-
-        return newNotification;
+    async updateReadStatusNotification(userId: string, notificationId: string) {
+        const notification = await this.notificationModel.findById(notificationId);
+        if (notification) {
+            if (!notification.isRead.includes(userId)) {
+                notification.isRead.push(userId);
+                return notification.save();
+            }
+        }
     }
 
     async deleteAllNotifications(userId: string) {
