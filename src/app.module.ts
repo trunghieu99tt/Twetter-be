@@ -10,6 +10,7 @@ import { TokenModule } from './modules/token/token.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { StoryModule } from './modules/story/story.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { HashtagModule } from './modules/hashtag/hashtag.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { NotificationModule } from './modules/notification/notification.module';
     TokenModule,
     ChatModule,
     StoryModule,
-    NotificationModule
+    NotificationModule,
+    HashtagModule
   ],
   controllers: [],
   providers: [],

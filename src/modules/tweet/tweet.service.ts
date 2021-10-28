@@ -368,4 +368,30 @@ export class TweetService {
             ? this.tweetModel.countDocuments(conditions).exec()
             : this.tweetModel.estimatedDocumentCount().exec();
     }
+
+    async getTweetsByHashtag(user: UserDocument, hashtag: string, option: QueryOption): Promise<ResponseDTO> {
+
+        const following = user.following;
+
+        const conditions = {
+            $and: [
+                {
+                    $or: [
+                        { audience: 0 },
+                        { author: { $in: following } },
+                        { author: user }
+                    ]
+                },
+                { tags: hashtag }
+            ]
+        };
+        return this.findAllAndCount(option, conditions);
+    }
+
+    async countTweetByHashtag(hashtag: string): Promise<number> {
+        const conditions = {
+            tags: hashtag
+        };
+        return this.tweetModel.countDocuments(conditions).exec();
+    }
 }

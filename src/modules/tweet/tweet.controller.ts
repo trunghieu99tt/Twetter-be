@@ -133,4 +133,20 @@ export class TweetController {
     async saveTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
         return ResponseTool.POST_OK(await this.tweetService.saveTweet(tweetId, user));
     }
+
+    @Get('/hashtag/:name')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getTweetsByHashtag(@GetUser() user: UserDocument, @Param('name') name: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getTweetsByHashtag(user, name, query.options);
+        return ResponseTool.GET_OK(data, total);
+    }
+
+    @Get('/count-by-hashtag/:name')
+    async getCountByHashtag(@Param('name') name: string): Promise<ResponseDTO> {
+        const count = await this.tweetService.countTweetByHashtag(name);
+        return ResponseTool.GET_OK(count);
+    }
+
 }

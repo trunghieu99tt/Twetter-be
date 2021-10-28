@@ -57,9 +57,9 @@ export class StoryService {
             audience: {
                 $in: [0, 1]
             },
-            // createdAt: {
-            //     $gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
-            // }
+            createdAt: {
+                $gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
+            }
         };
 
         return this.findAll(query, conditions);

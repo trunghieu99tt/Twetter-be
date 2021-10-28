@@ -16,8 +16,6 @@ export class MessageService {
         private readonly messageModel: Model<MessageDocument>,
     ) { }
 
-    @Inject()
-    private readonly userService: UserService;
 
     async findAll(option: QueryOption, conditions: any = {}): Promise<MessageDocument[]> {
         return this.messageModel
@@ -28,11 +26,11 @@ export class MessageService {
             })
             .skip(option.skip)
             .limit(option.limit)
-            .populate("author", "_id name avatar")
+            .populate("author", "_id name avatar");
     }
 
 
-    count({ conditions }: { conditions?: any } = {}): Promise<number> {
+    count({ conditions }: { conditions?: any; } = {}): Promise<number> {
         return Object.keys(conditions || {}).length > 0
             ? this.messageModel.countDocuments(conditions).exec()
             : this.messageModel.estimatedDocumentCount().exec();
@@ -55,13 +53,13 @@ export class MessageService {
             roomId: new ObjectId(roomId),
         };
 
-        console.log('conditions: ', conditions)
+        console.log('conditions: ', conditions);
 
         const data = await this.findAll(option, conditions);
         const total = await this.count({ conditions });
 
         return {
             data, total
-        }
+        };
     }
 }
