@@ -5,7 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { Schema as MongoSchema } from 'mongoose';
 
 // constants
-import { EAudience, EGender } from "src/config/constants";
+import { EAudience, EGender } from "src/common/config/constants";
 import { USER_CONST } from "./user.constants";
 
 export const USER_MODEL = "users";

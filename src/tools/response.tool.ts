@@ -1,4 +1,4 @@
-import { MSG } from "../config/constants";
+import { MSG } from "../common/config/constants";
 import { ResponseDTO } from "../common/dto/response.dto";
 import { HttpException } from "@nestjs/common";
 

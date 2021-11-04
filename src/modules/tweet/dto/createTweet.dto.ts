@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsString } from "class-validator";
-import { EAudience } from "src/config/constants";
+import { EAudience } from "src/common/config/constants";
 
 export class CreateTweetDTO {
     @ApiProperty()

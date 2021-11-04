@@ -4,7 +4,7 @@ import { UserService } from 'src/modules/user/user.service';
 import * as bcrypt from 'bcryptjs';
 const GoogleTokenStrategy = require("passport-google-token").Strategy;
 import { use } from 'passport';
-import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from 'src/config/env';
+import { GOOGLE_CLIENT_ID, GOOGLE_SECRET } from 'src/common/config/env';
 import { AuthTool } from '../tool/auth.tool';
 
 

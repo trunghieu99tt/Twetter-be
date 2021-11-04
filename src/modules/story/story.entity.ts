@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsString } from "class-validator";
 import * as mongoose from 'mongoose';
-import { EAudience } from "src/config/constants";
+import { EAudience } from "src/common/config/constants";
 import { User, UserDocument } from "../user/user.entity";
 
 @Schema({

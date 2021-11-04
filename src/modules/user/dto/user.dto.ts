@@ -1,6 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEmail, IsNotEmpty, IsString, Matches, MaxLength, MinLength } from "class-validator";
-import { EGender } from "src/config/constants";
+import { EGender } from "src/common/config/constants";
 import { USER_CONST } from "../user.constants";
 
 export class UserDTO {

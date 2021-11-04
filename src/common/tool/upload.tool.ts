@@ -1,5 +1,5 @@
 import { MulterOptions } from "@nestjs/platform-express/multer/interfaces/multer-options.interface";
-import { CLOUDINARY_PATH, CLOUDINARY_PATH_DEV, DEVELOPMENT } from "src/config/env";
+import { CLOUDINARY_PATH, CLOUDINARY_PATH_DEV, DEVELOPMENT } from "src/common/config/env";
 
 const cloudinary = require("cloudinary").v2;
 const sharp = require("sharp");
@@ -10,7 +10,7 @@ export class UploadTool {
     static imagePath: string = !DEVELOPMENT ? CLOUDINARY_PATH : CLOUDINARY_PATH_DEV;
 
     static multerFilter = (req, file, cb) => {
-        console.log(`file.mimetype`, file.mimetype)
+        console.log(`file.mimetype`, file.mimetype);
         // if (!file.mimetype.startsWith("image")) {
         //     return cb(
         //         new Error("Not an image! Please upload only images"),
@@ -23,7 +23,7 @@ export class UploadTool {
     static imageUpload: MulterOptions = {
         storage: multer.memoryStorage(),
         fileFilter: UploadTool.multerFilter,
-    }
+    };
 
     static uploadMediaToServer = async (file: any) => {
         try {
@@ -123,6 +123,6 @@ export class UploadTool {
                 }
             });
         });
-    }
+    };
 
 }

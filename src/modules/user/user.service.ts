@@ -16,12 +16,7 @@ import { UserRepository } from './user.repository';
 import { UpdateUserDTO } from './dto/updateUser.dto';
 
 // constants
-import { MSG } from 'src/config/constants';
-import { MongoError } from 'mongodb';
-import { TweetService } from '../tweet/tweet.service';
-import { assertResolveFunctionsPresent } from 'graphql-tools';
-
-
+import { MSG } from 'src/common/config/constants';
 @Injectable()
 export class UserService {
 
@@ -52,44 +47,93 @@ export class UserService {
         return this.userRepository.findByUsernameOrEmail(usernameOrEmail);
     }
 
+    async generateNewPassword(password: string): Promise<string> {
+        return bcrypt.hash(password, 10);
+    }
+
+    async checkIfPasswordIsCorrect(user: UserDocument, password: string): Promise<boolean> {
+        return bcrypt.compare(password, user.password.toString());
+    }
+
+    deleteUnnecessaryFieldsForUpdating(user: UpdateUserDTO) {
+        delete user.oldPassword;
+        delete user.newPassword;
+        delete user.newPasswordConfirm;
+    }
+
+
     async createUser(user: Partial<User>): Promise<UserDocument> {
-
         const validateUsernameOrEmail = await this.validateUsernameOrEmail(user.username);
-
         if (!validateUsernameOrEmail) {
             throw new BadRequestException(UserService.name, MSG.FRONTEND.INVALID_USERNAME);
         }
-
         const createdUser = new this.userModel(user);
-
         if (!createdUser.checkPasswordConfirm()) {
             throw new BadRequestException("Password and confirm password are not equal");
         }
-
         try {
             await createdUser.save();
             return createdUser;
         } catch (error) {
             throw new BadRequestException(error);
         }
+    }
+
+    async checkIfEmailAlreadyTakenByOtherUser(email: string, userId: string): Promise<boolean> {
+        const user = await this.userModel.findOne({
+            email,
+        });
+
+
+        return user && user?._id && user._id.toString() != userId;
+    }
+
+    async checkIfEmailIsAvailable(email: string, userId: string): Promise<void> {
+        if (!this.validateUsernameOrEmail(email)) {
+            throw new BadRequestException(UserService.name, "Invalid email");
+        }
+        const isEmailAlreadyTakenByOtherUser = await this.checkIfEmailAlreadyTakenByOtherUser(email, userId);
+
+        if (isEmailAlreadyTakenByOtherUser) {
+            throw new BadRequestException(UserService.name, "Email is already taken");
+        }
 
     }
 
-    async updateUser(username: string, newUserInfo: UpdateUserDTO): Promise<UserDocument> {
+    async preUpdateUserHook(userId: string, newUserInfo: UpdateUserDTO) {
 
-        const user = await this.findByUsernameOrEmail(username);
+        const user = await this.findById(userId);
 
         if (!user) {
             throw new BadRequestException(UserService.name, "User not found");
         }
 
-        if (newUserInfo.password) {
-            newUserInfo.password = await bcrypt.hash(newUserInfo.password, 10);
+        if (newUserInfo.email) {
+            await this.checkIfEmailIsAvailable(newUserInfo.email, userId);
         }
+
+        if (newUserInfo.password) {
+            newUserInfo.password = await this.generateNewPassword(newUserInfo.password);
+        }
+
+        if (newUserInfo.oldPassword) {
+            const isPasswordCorrect = await this.checkIfPasswordIsCorrect(user, newUserInfo.oldPassword);
+            if (!isPasswordCorrect) {
+                throw new BadRequestException(UserService.name, "Old password is not valid");
+            }
+            newUserInfo.password = await this.generateNewPassword(newUserInfo.newPassword);
+            this.deleteUnnecessaryFieldsForUpdating(newUserInfo);
+        }
+
+        return newUserInfo;
+    }
+
+    async updateUser(userId: string, data: UpdateUserDTO): Promise<UserDocument> {
+        const newUserInfo = await this.preUpdateUserHook(userId, data);
 
         try {
             const response = await this.userModel.findOneAndUpdate({
-                _id: user._id
+                _id: userId
             }, newUserInfo, {
                 new: true,
             });
