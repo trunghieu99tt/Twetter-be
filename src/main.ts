@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import * as morgan from 'morgan';
 import { AppModule } from './app.module';
-import { PRODUCTION, PROJECT_NAME, PROJECT_VERSION, PORT, SWAGGER_PATH } from './config/env';
+import { PRODUCTION, PROJECT_NAME, PROJECT_VERSION, PORT, SWAGGER_PATH } from './common/config/env';
 import { MongoTool } from './tools/mongo.tool';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 // import peerConnection from 'src/modules/chat/chat.peerjs';

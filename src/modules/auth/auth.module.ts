@@ -13,7 +13,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { UserModule } from '../user/user.module';
 
 // env
-import { JWT_EXP, JWT_SECRET } from 'src/config/env';
+import { JWT_EXP, JWT_SECRET } from 'src/common/config/env';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 

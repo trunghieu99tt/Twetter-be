@@ -54,7 +54,7 @@ export class UserController {
     @UseGuards(MyTokenAuthGuard)
     @ApiOkResponse({ type: ResponseDTO })
     async updateMyProfile(@GetUser() oldUser, @Body() newUserInfo: UpdateUserDTO): Promise<ResponseDTO> {
-        return ResponseTool.PATCH_OK(await this.userService.updateUser(oldUser.username, newUserInfo));
+        return ResponseTool.PATCH_OK(await this.userService.updateUser(oldUser._id, newUserInfo));
     }
 
     @Post('/follow/:userId')

@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsString } from "class-validator";
 import { User, UserDocument, USER_MODEL } from "../user/user.entity";
-import { Document, Schema as MongoSchema } from 'mongoose'
-import { EAudience } from "src/config/constants";
+import { Document, Schema as MongoSchema } from 'mongoose';
+import { EAudience } from "src/common/config/constants";
 
 export const TWEET_MODEL = "tweets";
 

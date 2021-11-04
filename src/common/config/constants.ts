@@ -1,4 +1,4 @@
-import * as msg from '../config/message.json';
+import * as msg from './message.json';
 
 export const MSG = msg;
 

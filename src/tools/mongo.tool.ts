@@ -1,6 +1,6 @@
 import * as mongoose from "mongoose";
 import { red } from 'chalk';
-import { DATABASE_URL } from "src/config/env";
+import { DATABASE_URL } from "src/common/config/env";
 
 export class MongoTool {
     static initialize() {

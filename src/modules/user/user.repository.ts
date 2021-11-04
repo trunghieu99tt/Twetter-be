@@ -14,15 +14,13 @@ export class UserRepository {
         return this.userModel
             .find(conditions)
             .sort(option.sort)
-            .select({ password: 0 })
             .skip(option.skip)
-            .limit(option.limit)
+            .limit(option.limit);
     }
 
     async findById(id: string): Promise<UserDocument> {
         return this.userModel
             .findById(id)
-            .select({ password: 0 })
             .populate('followers', '_id name avatar bio followers following')
             .populate('following', '_id name avatar bio followers following')
             .exec();
@@ -48,6 +46,6 @@ export class UserRepository {
         },
             data,
             { new: true })
-            .exec()
+            .exec();
     }
 }

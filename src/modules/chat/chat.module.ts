@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { JwtModule } from "@nestjs/jwt";
 import { MongooseModule } from "@nestjs/mongoose";
-import { JWT_EXP, JWT_SECRET } from "src/config/env";
+import { JWT_EXP, JWT_SECRET } from "src/common/config/env";
 import { AuthModule } from "../auth/auth.module";
 import { MessageSchema } from "../message/message.entity";
 import { MessageModule } from "../message/message.module";

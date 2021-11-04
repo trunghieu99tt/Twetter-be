@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DATABASE_URL } from './config/env';
+import { DATABASE_URL } from './common/config/env';
 import { CommentModule } from './modules/comment/comment.module';
 import { TweetModule } from './modules/tweet/tweet.module';
 import { UserModule } from './modules/user/user.module';

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios';
@@ -20,9 +20,11 @@ import { TokenService } from '../token/token.service';
 
 // tool
 import { AuthTool } from './tool/auth.tool';
+import { EmailTool } from 'src/common/tool/email.tool';
 
 // env
-import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URL, GOOGLE_CLIENT_ID, JWT_EXP } from 'src/config/env';
+import { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_REDIRECT_URL, GOOGLE_CLIENT_ID, JWT_EXP } from 'src/common/config/env';
+import { SMTPMailer } from 'src/common/config/mailer';
 
 
 @Injectable()
@@ -55,7 +57,7 @@ export class AuthService {
         return {
             user: newUser,
             accessToken
-        }
+        };
     }
 
     async signIn(loginDto: LoginDTO, timestamp: number = Date.now()): Promise<AccessTokenResponse> {
@@ -72,15 +74,19 @@ export class AuthService {
         return {
             user,
             accessToken
-        }
+        };
     }
 
-    async logout(user: UserDocument): Promise<{ message: string }> {
+    async logout(user: UserDocument): Promise<{ message: string; }> {
         try {
             await this.tokenService.deleteJWTKey(user.id, user.jti);
+
+            // delete all expired tokens
+            await this.tokenService.deleteExpiredJWTKeys();
+
             return {
                 message: "Good bye :)"
-            }
+            };
         } catch (error) {
             console.error(error);
         }
@@ -89,7 +95,7 @@ export class AuthService {
     async googleLogin(tokenId: string): Promise<AccessTokenResponse> {
         const client = new OAuth2Client(GOOGLE_CLIENT_ID);
         const response = await client.verifyIdToken({ idToken: tokenId, audience: GOOGLE_CLIENT_ID });
-        console.log(`response.payload`, response.payload)
+        console.log(`response.payload`, response.payload);
         const { email_verified, name, email, given_name, family_name, sub, picture } = response.payload;
 
         if (email_verified) {
@@ -105,7 +111,7 @@ export class AuthService {
                 return {
                     user,
                     accessToken
-                }
+                };
             } else {
                 try {
                     /**
@@ -138,14 +144,14 @@ export class AuthService {
                     return {
                         user: newUser,
                         accessToken
-                    }
+                    };
                 } catch (error) {
-                    console.log(`error`, error)
+                    console.log(`error`, error);
                 }
             }
         }
         else {
-            throw new BadRequestException("This account has not verified yet. Please verify it before logging")
+            throw new BadRequestException("This account has not verified yet. Please verify it before logging");
         }
     }
 
@@ -184,7 +190,7 @@ export class AuthService {
             return {
                 user,
                 accessToken
-            }
+            };
         } else {
             try {
 
@@ -217,10 +223,41 @@ export class AuthService {
                 return {
                     user: newUser,
                     accessToken
-                }
+                };
             } catch (error) {
-                console.log(`error`, error)
+                console.log(`error`, error);
             }
         }
     }
+
+    async resetPassword(email: string) {
+        const user = await this.userService.findByUsernameOrEmail(email);
+        if (!user) {
+            throw new NotFoundException("User not found");
+        }
+
+        try {
+            const token = AuthTool.randomToken(6);
+
+            // delete all tokens of this user
+            const deleteResponse = await this.tokenService.deleteJWTKeysByUserID(user._id);
+
+            const updateResponse = await this.userService.updateUser(user._id, {
+                password: token,
+            });
+
+            SMTPMailer.sendMail(
+                user.email,
+                "Quen mat khau",
+                EmailTool.resetPasswordEmail(user.name, user.username, token),
+            );
+            return {
+                message: "OK"
+            };
+        } catch (error) {
+            console.log(`error`, error);
+            throw new InternalServerErrorException("Internal server error");
+        }
+    }
+
 }

@@ -1,6 +1,7 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
+import { ResponseTool } from 'src/tools/response.tool';
 import { GetUser } from '../user/decorator/getUser.decorator';
 import { UserDTO } from '../user/dto/user.dto';
 import { UserDocument } from '../user/user.entity';
@@ -51,7 +52,13 @@ export class AuthController {
     @Post('/logout')
     @ApiOkResponse()
     @UseGuards(MyTokenAuthGuard)
-    async logout(@GetUser() user): Promise<{ message: string }> {
+    async logout(@GetUser() user): Promise<{ message: string; }> {
         return await this.authService.logout(user as UserDocument);
+    }
+
+    @Post('/forgot-password')
+    async forgotPassword(@Body('email') email: string) {
+        const response = await this.authService.resetPassword(email);
+        return ResponseTool.POST_OK(response);
     }
 }

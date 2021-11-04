@@ -42,4 +42,36 @@ export class TokenService {
             console.log(`error`, error);
         }
     }
+
+
+    /**
+     * 
+     * @param threshold the date which we want to delete jwt keys before in milliseconds
+     */
+    async deleteJWTKeysCreatedBeforeDate(threshold: number) {
+        try {
+            const response = await this.tokenModel.deleteMany({ createdAt: { $lt: threshold } });
+            return response.ok;
+        } catch (error) {
+            console.log(`error`, error);
+        }
+    }
+
+    async deleteExpiredJWTKeys() {
+        try {
+            const response = await this.tokenModel.deleteMany({ expAt: { $lt: Date.now() } });
+            return response.ok;
+        } catch (error) {
+            console.log(`error`, error);
+        }
+    }
+
+    async deleteJWTKeysByUserID(userID: string) {
+        try {
+            const response = await this.tokenModel.deleteMany({ key: { $regex: `JWT\\[${userID}\\]\\[.*\\]` } });
+            return response.ok;
+        } catch (error) {
+            console.log(`error`, error);
+        }
+    }
 }
