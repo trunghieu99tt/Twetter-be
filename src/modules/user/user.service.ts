@@ -92,7 +92,7 @@ export class UserService {
                 _id: user._id
             }, newUserInfo, {
                 new: true,
-            })
+            });
 
             return response;
         } catch (error) {
@@ -107,6 +107,11 @@ export class UserService {
     }
 
     async followUser(user: UserDocument, userToFollowId: string) {
+
+        if (user._id.toString() === userToFollowId) {
+            throw new BadRequestException(UserService.name, "You can't follow yourself");
+        }
+
         const userToFollow = await this.findById(userToFollowId);
         if (user.following.some(user => user._id.toString() === userToFollow._id.toString())) {
             user.following.splice(user.following.findIndex(user => user.id.toString() === userToFollow._id.toString()), 1);

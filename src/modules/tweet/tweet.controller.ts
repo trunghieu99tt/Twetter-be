@@ -62,6 +62,16 @@ export class TweetController {
         return ResponseTool.GET_OK(data, total);
     }
 
+
+    @Get('/user-medias/:userId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    @ApiQueryGetMany()
+    async getUserMedias(@GetUser() user: UserDocument, @Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getUserMedias(user, userId, query.options);
+        return ResponseTool.GET_OK(data, total);
+    }
+
     @Get('/popular')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)

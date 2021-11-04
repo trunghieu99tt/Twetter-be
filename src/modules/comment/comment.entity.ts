@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { IsBoolean, IsDate, IsString } from "class-validator";
 import { Document, ObjectId, Schema as MongoSchema } from "mongoose";
-import { Tweet } from "../tweet/tweet.entity";
+import { Tweet, TweetDocument } from "../tweet/tweet.entity";
 import { User, USER_MODEL } from "../user/user.entity";
 
 export const COMMENT_MODEL = 'comments';
@@ -32,7 +32,7 @@ export class Comment {
         type: MongoSchema.Types.ObjectId,
         ref: Tweet.name
     })
-    tweet: Tweet | MongoSchema.Types.ObjectId
+    tweet: TweetDocument;
 
     // author prop refs to a User
     @Prop({
@@ -47,8 +47,11 @@ export class Comment {
     })
     likes: User[];
 
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: COMMENT_MODEL }] })
+    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: Comment.name }] })
     replies: Comment[];
+
+    @Prop(Boolean)
+    isChild: boolean;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);

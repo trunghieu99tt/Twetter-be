@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import * as mongoose from 'mongoose';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { QueryOption, QueryPostOption } from 'src/tools/request.tool';
 import { TweetService } from '../tweet/tweet.service';
@@ -13,6 +14,7 @@ export class CommentService {
     constructor(
         @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
         private readonly tweetService: TweetService,
+        @InjectConnection() private readonly connection: mongoose.Connection
     ) { }
 
     async findAll(option: QueryOption, conditions: any = {}): Promise<CommentDocument[]> {
@@ -23,7 +25,15 @@ export class CommentService {
             .skip(option.skip)
             .limit(option.limit)
             .populate('likes', '_id avatar name')
-            .populate("author", "name avatar coverPhoto");
+            .populate("author", "name avatar coverPhoto")
+            .populate("tweet", "_id")
+            .populate({
+                path: 'replies',
+                populate: {
+                    path: 'author',
+                    select: '_id name avatar coverPhoto'
+                }
+            });
     }
 
     async findAllAndCount(option: QueryOption, conditions: any = {}): Promise<ResponseDTO> {
@@ -33,10 +43,23 @@ export class CommentService {
     }
 
     async createComment(createCommentDto: CreateCommentDTO, user: UserDocument, tweetId: string): Promise<CommentDocument> {
-        const tweet = await this.tweetService.getTweet(tweetId, user);
+
+        // 1. find tweet by id
+        let tweet = await this.tweetService.getTweet(tweetId, user);
+        let parentComment = null;
+
+        // if tweet not found -> this is a reply to a comment
         if (!tweet) {
-            throw new BadRequestException('Tweet not found');
+            parentComment = await this.getCommentById(tweetId);
+            if (!parentComment) {
+                throw new BadRequestException('Comment not found');
+            }
+            tweet = parentComment.tweet;
+
         }
+
+        console.log(`parentComment`, parentComment);
+
         const newComment = new this.commentModel(
             {
                 ...createCommentDto,
@@ -45,12 +68,25 @@ export class CommentService {
                 author: user,
                 modifiedAt: new Date(),
                 createdAt: new Date(),
+                isChild: !!parentComment
             }
         );
+
+        // create transaction to save newComment and parentComment
+        const session = await this.connection.startSession();
+        session.startTransaction();
         try {
-            const response = await newComment.save();
-            return response;
+            const comment = await newComment.save();
+            if (parentComment) {
+                parentComment.replies.push(comment);
+                await parentComment.save();
+            }
+            await session.commitTransaction();
+            session.endSession();
+            return comment;
         } catch (error) {
+            await session.abortTransaction();
+            session.endSession();
             throw new BadRequestException(error);
         }
     }
@@ -108,8 +144,9 @@ export class CommentService {
                 throw new BadRequestException('Tweet not found');
             }
             const conditions = {
-                "tweet": tweetId
-            }
+                "tweet": tweetId,
+                "isChild": false
+            };
             return this.findAllAndCount(query.options, conditions);
 
         } catch (error) {
@@ -121,14 +158,14 @@ export class CommentService {
         try {
             const conditions = {
                 author: user._id
-            }
+            };
             return this.findAllAndCount(query.options, conditions);
         } catch (error) {
             throw new BadRequestException(error);
         }
-    }
+    };
 
-    count({ conditions }: { conditions?: any } = {}): Promise<number> {
+    count({ conditions }: { conditions?: any; } = {}): Promise<number> {
         return Object.keys(conditions || {}).length > 0
             ? this.commentModel.countDocuments(conditions).exec()
             : this.commentModel.estimatedDocumentCount().exec();

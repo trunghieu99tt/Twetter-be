@@ -27,7 +27,10 @@ export class TweetService {
             .skip(option.skip)
             .limit(option.limit)
             .populate('author', 'name avatar coverPhoto followers gender')
-            .populate('retweetedBy', 'name avatar coverPhoto');
+            .populate('retweetedBy', 'name avatar coverPhoto')
+            .populate('likes', 'name avatar bio')
+            .populate('retweeted', 'name avatar bio')
+            .populate('saved', 'name avatar bio');
     }
 
     async findAllAndCount(option: QueryOption, conditions: any = {}): Promise<ResponseDTO> {
@@ -77,6 +80,10 @@ export class TweetService {
         // get tweet by id and populate author except password and passwordConfirm
         const tweet = await this.tweetModel.findById(id)
             .populate('author', 'name avatar coverPhoto followers gender')
+            .populate('retweetedBy', 'name avatar coverPhoto')
+            .populate('likes', 'name avatar bio')
+            .populate('retweeted', 'name avatar bio')
+            .populate('saved', 'name avatar bio')
             .exec();
 
         const userId = user?._id?.toString() || "";
@@ -305,17 +312,8 @@ export class TweetService {
         return this.findAllAndCount(option, conditions);
     }
 
-    async getMedias(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
-        const following = user.following;
-        const conditions = {
-            $or: [
-                { audience: 0 },
-                { author: { $in: following } },
-                { author: user }
-            ]
-        };
-
-        const aggregation = [
+    getMediaAggregation = () => {
+        return [
             {
                 $addFields: { media_count: { $size: { "$ifNull": ["$media", []] } } }
             },
@@ -333,9 +331,27 @@ export class TweetService {
             {
                 $unwind: "$author"
             },
+        ];
+    };
+
+    async getMedias(user: UserDocument, option: QueryOption): Promise<ResponseDTO> {
+        const following = user.following;
+        const conditions = {
+            $or: [
+                { audience: 0 },
+                { author: { $in: following } },
+                { author: user }
+            ]
+        };
+
+
+        const aggregation = [
+            {
+                $match: conditions
+            },
+            ...this.getMediaAggregation(),
             {
                 $match: {
-                    ...conditions,
                     media_count: { $gt: 0 }
                 }
             },
@@ -360,6 +376,59 @@ export class TweetService {
 
 
         const total = dataTotal?.[0]?.total || 0;
+        return { data, total };
+    }
+
+    async getUserMedias(userParam: UserDocument, userId: string, option: QueryOption): Promise<ResponseDTO> {
+        let user = userParam;
+        const following = userParam.following;
+
+        let conditions: any = {
+            author: userParam._id
+        };
+
+        if (userParam._id.toString() !== userId) {
+            user = await this.userService.findById(userId);
+            conditions = {
+                $and: [
+                    { author: user },
+                    {
+                        $or: [
+                            { audience: 0 },
+                            { author: { $in: following } },
+                        ]
+                    }
+                ]
+            };
+        }
+
+
+        const aggregation = [
+            {
+                $match: conditions
+            },
+            ...this.getMediaAggregation(),
+            {
+                $match: {
+                    media_count: { $gt: 0 }
+                }
+            },
+        ];
+
+        const data = await this.tweetModel.aggregate(aggregation)
+            .skip(option.skip)
+            .limit(option.limit)
+            .exec();
+
+        const dataTotal = await this.tweetModel.aggregate([
+            ...aggregation,
+            {
+                $count: 'total'
+            }
+        ]).exec();
+
+        const total = dataTotal?.[0]?.total || 0;
+
         return { data, total };
     }
 
@@ -393,5 +462,5 @@ export class TweetService {
             tags: hashtag
         };
         return this.tweetModel.countDocuments(conditions).exec();
-    }
+    };
 }
