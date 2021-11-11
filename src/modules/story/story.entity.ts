@@ -1,14 +1,13 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsString } from "class-validator";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { IsString } from 'class-validator';
 import * as mongoose from 'mongoose';
-import { EAudience } from "src/common/config/constants";
-import { User, UserDocument } from "../user/user.entity";
+import { User, UserDocument } from '../user/user.entity';
 
 @Schema({
     collection: 'stories',
     toJSON: {
         virtuals: true,
-    }
+    },
 })
 export class Story {
     _id: string;
@@ -36,4 +35,4 @@ export class Story {
 
 export const StorySchema = SchemaFactory.createForClass(Story);
 
-export interface StoryDocument extends Story, Document { };
+export interface StoryDocument extends Story, Document {}

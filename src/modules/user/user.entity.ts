@@ -1,14 +1,14 @@
-import { Prop, raw, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsEmail, IsString, Length } from "class-validator";
-import { Document } from "mongoose";
+import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { IsEmail, IsString, Length } from 'class-validator';
+import { Document } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { Schema as MongoSchema } from 'mongoose';
 
 // constants
-import { EAudience, EGender } from "src/common/config/constants";
-import { USER_CONST } from "./user.constants";
+import { EAudience, EGender } from 'src/common/config/constants';
+import { USER_CONST } from './user.constants';
 
-export const USER_MODEL = "users";
+export const USER_MODEL = 'users';
 
 @Schema({
     timestamps: true,
@@ -82,18 +82,17 @@ export class User {
     @Prop({
         type: String,
         index: true,
-        required: true,
         trim: true,
     })
     email: string;
 
     @Prop({
-        enum: Object.values(EGender)
+        enum: Object.values(EGender),
     })
     gender: EGender;
 
     @Prop({
-        type: Date
+        type: Date,
     })
     birthday: Date;
 
@@ -143,7 +142,7 @@ export class User {
     following: UserDocument[];
 
     @Prop({
-        enum: Object.values(EAudience)
+        enum: Object.values(EAudience),
     })
     storyAudience: EAudience;
 
@@ -157,21 +156,26 @@ export class User {
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-UserSchema.pre("save", async function () {
+UserSchema.pre('save', async function () {
     const password = this.get('password');
     console.log('password: ', password);
     if (password) {
         this.set('passwordConfirm', null);
-        this.set("password", password ? await bcrypt.hash(password, 10) : null);
+        this.set('password', password ? await bcrypt.hash(password, 10) : null);
     }
 });
 
-UserSchema.methods.comparePassword = async function comparePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, ((this as unknown) as User).password.toString());
+UserSchema.methods.comparePassword = async function comparePassword(
+    password: string,
+): Promise<boolean> {
+    return bcrypt.compare(
+        password,
+        (this as unknown as User).password.toString(),
+    );
 };
 
 UserSchema.methods.checkPasswordConfirm = function () {
     return this.get('password') === this.get('passwordConfirm');
 };
 
-export interface UserDocument extends User, Document { }
+export interface UserDocument extends User, Document {}
