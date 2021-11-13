@@ -14,10 +14,13 @@ export class CommentService {
     constructor(
         @InjectModel(Comment.name) private commentModel: Model<CommentDocument>,
         private readonly tweetService: TweetService,
-        @InjectConnection() private readonly connection: mongoose.Connection
-    ) { }
+        @InjectConnection() private readonly connection: mongoose.Connection,
+    ) {}
 
-    async findAll(option: QueryOption, conditions: any = {}): Promise<CommentDocument[]> {
+    async findAll(
+        option: QueryOption,
+        conditions: any = {},
+    ): Promise<CommentDocument[]> {
         return this.commentModel
             .find(conditions)
             .sort(option.sort)
@@ -25,25 +28,31 @@ export class CommentService {
             .skip(option.skip)
             .limit(option.limit)
             .populate('likes', '_id avatar name')
-            .populate("author", "name avatar coverPhoto")
-            .populate("tweet", "_id")
+            .populate('author', 'name avatar coverPhoto')
+            .populate('tweet', '_id')
             .populate({
                 path: 'replies',
                 populate: {
                     path: 'author',
-                    select: '_id name avatar coverPhoto'
-                }
+                    select: '_id name avatar coverPhoto',
+                },
             });
     }
 
-    async findAllAndCount(option: QueryOption, conditions: any = {}): Promise<ResponseDTO> {
+    async findAllAndCount(
+        option: QueryOption,
+        conditions: any = {},
+    ): Promise<ResponseDTO> {
         const data = await this.findAll(option, conditions);
         const total = await this.count({ conditions });
         return { data, total };
     }
 
-    async createComment(createCommentDto: CreateCommentDTO, user: UserDocument, tweetId: string): Promise<CommentDocument> {
-
+    async createComment(
+        createCommentDto: CreateCommentDTO,
+        user: UserDocument,
+        tweetId: string,
+    ): Promise<CommentDocument> {
         // 1. find tweet by id
         let tweet = await this.tweetService.getTweet(tweetId, user);
         let parentComment = null;
@@ -55,22 +64,19 @@ export class CommentService {
                 throw new BadRequestException('Comment not found');
             }
             tweet = parentComment.tweet;
-
         }
 
         console.log(`parentComment`, parentComment);
 
-        const newComment = new this.commentModel(
-            {
-                ...createCommentDto,
-                isEdited: false,
-                tweet: tweet,
-                author: user,
-                modifiedAt: new Date(),
-                createdAt: new Date(),
-                isChild: !!parentComment
-            }
-        );
+        const newComment = new this.commentModel({
+            ...createCommentDto,
+            isEdited: false,
+            tweet: tweet,
+            author: user,
+            modifiedAt: new Date(),
+            createdAt: new Date(),
+            isChild: !!parentComment,
+        });
 
         // create transaction to save newComment and parentComment
         const session = await this.connection.startSession();
@@ -100,7 +106,11 @@ export class CommentService {
         }
     }
 
-    async updateComment(commentId: string, updateCommentDto: CreateCommentDTO, user: UserDocument): Promise<CommentDocument> {
+    async updateComment(
+        commentId: string,
+        updateCommentDto: CreateCommentDTO,
+        user: UserDocument,
+    ): Promise<CommentDocument> {
         const comment = await this.getCommentById(commentId);
 
         if (!comment) {
@@ -108,14 +118,20 @@ export class CommentService {
         }
 
         if (comment.author.username !== user.username) {
-            throw new BadRequestException('You are not allowed to update this comment');
+            throw new BadRequestException(
+                'You are not allowed to update this comment',
+            );
         }
 
         updateCommentDto.modifiedAt = new Date();
         updateCommentDto.isEdited = true;
 
         try {
-            const comment = await this.commentModel.findByIdAndUpdate(commentId, updateCommentDto, { new: true });
+            const comment = await this.commentModel.findByIdAndUpdate(
+                commentId,
+                updateCommentDto,
+                { new: true },
+            );
             return comment;
         } catch (error) {
             throw new BadRequestException(error);
@@ -128,7 +144,9 @@ export class CommentService {
             throw new BadRequestException('Comment not found');
         }
         if (comment.author.username !== user.username) {
-            throw new BadRequestException('You are not allowed to delete this comment');
+            throw new BadRequestException(
+                'You are not allowed to delete this comment',
+            );
         }
         try {
             await this.commentModel.findByIdAndDelete(commentId);
@@ -137,37 +155,50 @@ export class CommentService {
         }
     }
 
-    async findCommentsByTweetId(tweetId: string, user: UserDocument, query: QueryPostOption): Promise<ResponseDTO> {
+    async findCommentsByTweetId(
+        tweetId: string,
+        user: UserDocument,
+        query: QueryPostOption,
+    ): Promise<ResponseDTO> {
         try {
             const tweet = await this.tweetService.getTweet(tweetId, user);
             if (!tweet) {
                 throw new BadRequestException('Tweet not found');
             }
             const conditions = {
-                "tweet": tweetId,
-                "isChild": false
+                tweet: tweetId,
+                isChild: false,
             };
             return this.findAllAndCount(query.options, conditions);
-
         } catch (error) {
             throw new BadRequestException(error);
         }
     }
 
-    async findCommentsByUser(user: UserDocument, query: QueryPostOption): Promise<ResponseDTO> {
+    async findCommentsByUser(
+        user: UserDocument,
+        query: QueryPostOption,
+    ): Promise<ResponseDTO> {
         try {
             const conditions = {
-                author: user._id
+                author: user._id,
             };
             return this.findAllAndCount(query.options, conditions);
         } catch (error) {
             throw new BadRequestException(error);
         }
-    };
+    }
 
-    count({ conditions }: { conditions?: any; } = {}): Promise<number> {
+    count({ conditions }: { conditions?: any } = {}): Promise<number> {
         return Object.keys(conditions || {}).length > 0
             ? this.commentModel.countDocuments(conditions).exec()
             : this.commentModel.estimatedDocumentCount().exec();
+    }
+
+    async search(search: string, query: QueryPostOption) {
+        const conditions = {
+            content: { $regex: search, $options: 'i' },
+        };
+        return this.findAllAndCount(query.options, conditions);
     }
 }

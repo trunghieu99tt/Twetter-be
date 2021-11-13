@@ -5,11 +5,11 @@ export const MSG = msg;
 export enum EGender {
     MALE,
     FEMALE,
-    UNKNOWN
+    UNKNOWN,
 }
 
 export enum EAudience {
     PUBLIC,
     FOLLOWERS,
-    ONLY_ME
+    ONLY_ME,
 }

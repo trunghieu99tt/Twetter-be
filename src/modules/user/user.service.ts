@@ -9,7 +9,7 @@ import * as bcrypt from 'bcryptjs';
 import { InjectModel } from '@nestjs/mongoose';
 
 // tool
-import { QueryOption } from 'src/tools/request.tool';
+import { QueryOption, QueryPostOption } from 'src/tools/request.tool';
 
 // entity
 import { User, UserDocument } from './user.entity';
@@ -22,6 +22,7 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 
 // constants
 import { MSG } from 'src/common/config/constants';
+import { ResponseDTO } from 'src/common/dto/response.dto';
 @Injectable()
 export class UserService {
     constructor(
@@ -271,5 +272,41 @@ export class UserService {
             select: '_id',
         });
         return data;
+    }
+
+    count({ conditions }: { conditions?: any } = {}): Promise<number> {
+        return Object.keys(conditions || {}).length > 0
+            ? this.userModel.countDocuments(conditions).exec()
+            : this.userModel.estimatedDocumentCount().exec();
+    }
+
+    async findAllAndCount(
+        option: QueryOption,
+        conditions: any = {},
+    ): Promise<ResponseDTO> {
+        const data = await this.findAll(option, conditions);
+        const total = await this.count({ conditions });
+        return { data, total };
+    }
+
+    async search(search: string, query: QueryPostOption) {
+        const conditions = {
+            $or: [
+                {
+                    name: {
+                        $regex: search,
+                        $options: 'i',
+                    },
+                },
+                {
+                    bio: {
+                        $regex: search,
+                        $options: 'i',
+                    },
+                },
+            ],
+        };
+
+        return this.findAllAndCount(query.options, conditions);
     }
 }

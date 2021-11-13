@@ -17,12 +17,14 @@ export class StoryService {
         option: QueryOption,
         conditions: any = {},
     ): Promise<StoryDocument[]> {
-        return this.storyModel
+        const results = await this.storyModel
             .find(conditions)
             .sort(option.sort)
             .skip(option.skip)
             .limit(option.limit)
             .populate('owner', '_id name avatar');
+
+        return results;
     }
 
     async findStory(id: string): Promise<StoryDocument> {
