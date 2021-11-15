@@ -174,6 +174,8 @@ export class UserService {
     ): Promise<UserDocument> {
         const newUserInfo = await this.preUpdateUserHook(userId, data);
 
+        console.log(`newUserInfo.password`, newUserInfo.password);
+
         try {
             const response = await this.userModel.findOneAndUpdate(
                 {
@@ -208,6 +210,7 @@ export class UserService {
         }
 
         const userToFollow = await this.findById(userToFollowId);
+
         if (
             user.following.some(
                 (user) => user._id.toString() === userToFollow._id.toString(),
@@ -232,9 +235,15 @@ export class UserService {
         }
         user.passwordConfirm = '';
         userToFollow.passwordConfirm = '';
+
         try {
-            await user.save();
-            await userToFollow.save();
+            await this.userModel.findByIdAndUpdate(user._id, {
+                following: user.following,
+            });
+
+            await this.userModel.findByIdAndUpdate(userToFollow._id, {
+                followers: userToFollow.followers,
+            });
         } catch (error) {
             throw new BadRequestException(error);
         }

@@ -18,11 +18,10 @@ export class SearchService {
         searchQuery: { search: string; category: string },
         query: QueryPostOption,
     ) {
-        console.log(`searchQuery`, searchQuery);
         switch (searchQuery.category) {
             case 'tweet':
                 return this.tweetService.search(searchQuery.search, query);
-            case 'user':
+            case 'people':
                 return this.userService.search(searchQuery.search, query);
             case 'hashtag':
                 return this.tagService.search(searchQuery.search, query);

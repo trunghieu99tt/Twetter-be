@@ -27,7 +27,6 @@ export class CommentService {
             .select({ password: 0, passwordConfirm: 0 })
             .skip(option.skip)
             .limit(option.limit)
-            .populate('likes', '_id avatar name')
             .populate('author', 'name avatar coverPhoto')
             .populate('tweet', '_id')
             .populate({
@@ -76,6 +75,7 @@ export class CommentService {
             modifiedAt: new Date(),
             createdAt: new Date(),
             isChild: !!parentComment,
+            likes: [],
         });
 
         // create transaction to save newComment and parentComment
@@ -200,5 +200,32 @@ export class CommentService {
             content: { $regex: search, $options: 'i' },
         };
         return this.findAllAndCount(query.options, conditions);
+    }
+
+    async reactComment(user: UserDocument, commentId: string) {
+        const comment = await this.getCommentById(commentId);
+        if (!comment) {
+            throw new BadRequestException('Comment not found');
+        }
+        console.log(comment.likes, Array.isArray(comment.likes));
+        const didUserLiked = comment.likes.some(
+            (userId: string) => userId.toString() === user._id.toString(),
+        );
+        if (didUserLiked) {
+            // remove like
+            comment.likes = comment.likes.filter(
+                (userId) => userId.toString() !== user._id.toString(),
+            );
+        } else {
+            if (comment?.likes) {
+                comment.likes.push(user._id);
+            } else {
+                console.log('Go here');
+                comment.likes = [user._id];
+            }
+        }
+        console.log('comment: ', comment);
+        const response = await comment.save();
+        return response;
     }
 }

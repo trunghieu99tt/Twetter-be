@@ -56,7 +56,7 @@ export class TweetService {
         const conditions = {
             $or: [
                 { audience: 0 },
-                { author: { $in: following } },
+                { author: { $in: following }, audience: 1 },
                 { author: user },
             ],
         };
@@ -66,11 +66,31 @@ export class TweetService {
     async getTweetsByUser(
         userId: string,
         option: QueryOption,
+        userRequest: UserDocument,
     ): Promise<ResponseDTO> {
         const user = await this.userService.findById(userId);
-        const conditions = {
-            $or: [{ author: user, isRetweet: false }, { retweetedBy: user }],
+        const isUserRequestFollowingUser = userRequest.following.some(
+            (u: UserDocument) => u._id.toString() === userId,
+        );
+
+        let conditions: any = {
+            audience: 0,
         };
+
+        if (
+            user._id.toString() === userRequest._id.toString() ||
+            isUserRequestFollowingUser
+        ) {
+            conditions = {
+                $or: [
+                    { author: user, isRetweet: false },
+                    { retweetedBy: user },
+                ],
+            };
+        }
+
+        console.log(`conditions`, conditions);
+
         return this.findAllAndCount(option, conditions);
     }
 
@@ -223,10 +243,18 @@ export class TweetService {
             throw new BadRequestException('Tweet not found');
         }
 
-        if (tweet.likes.includes(user._id)) {
-            tweet.likes.splice(tweet.likes.indexOf(user._id), 1);
+        console.log(`tweet.likes`, tweet.likes);
+        const didUserLiked = tweet.likes.some(
+            (userLiked: UserDocument) =>
+                userLiked._id.toString() === user._id.toString(),
+        );
+
+        if (didUserLiked) {
+            tweet.likes = tweet.likes.filter(
+                (userLiked) => userLiked._id.toString() !== user._id.toString(),
+            );
         } else {
-            tweet.likes.push(user._id);
+            tweet.likes.push(user);
         }
 
         try {

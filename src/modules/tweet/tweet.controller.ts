@@ -1,6 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ApiQueryGetMany, QueryGet } from 'src/common/decorators/common.decorator';
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    UseGuards,
+} from '@nestjs/common';
+import {
+    ApiBearerAuth,
+    ApiOkResponse,
+    ApiQuery,
+    ApiTags,
+} from '@nestjs/swagger';
+import {
+    ApiQueryGetMany,
+    QueryGet,
+} from 'src/common/decorators/common.decorator';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
 import { QueryPostOption } from 'src/tools/request.tool';
@@ -11,18 +28,24 @@ import { CreateTweetDTO } from './dto/createTweet.dto';
 import { TweetService } from './tweet.service';
 
 @Controller('tweet')
-@ApiTags("Tweets")
+@ApiTags('Tweets')
 @ApiBearerAuth()
 export class TweetController {
-    constructor(private readonly tweetService: TweetService) { }
+    constructor(private readonly tweetService: TweetService) {}
 
     @Post('/')
     @ApiOkResponse({
-        type: ResponseDTO
+        type: ResponseDTO,
     })
     @UseGuards(MyTokenAuthGuard)
-    async createTweet(@GetUser() user: UserDocument, @Body() createTweetDto: CreateTweetDTO): Promise<ResponseDTO> {
-        const newTweet = await this.tweetService.createTweet(createTweetDto, user);
+    async createTweet(
+        @GetUser() user: UserDocument,
+        @Body() createTweetDto: CreateTweetDTO,
+    ): Promise<ResponseDTO> {
+        const newTweet = await this.tweetService.createTweet(
+            createTweetDto,
+            user,
+        );
         return ResponseTool.POST_OK(newTweet);
     }
 
@@ -30,8 +53,15 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getNewsFeedTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getPublicOrFollowersOnlyTweets(user, query.options);
+    async getNewsFeedTweets(
+        @GetUser() user: UserDocument,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } =
+            await this.tweetService.getPublicOrFollowersOnlyTweets(
+                user,
+                query.options,
+            );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -39,8 +69,14 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getMySavedTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getSavedTweets(user, query.options);
+    async getMySavedTweets(
+        @GetUser() user: UserDocument,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getSavedTweets(
+            user,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -48,8 +84,14 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getMyLikedTweets(@Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getLikedTweets(userId, query.options);
+    async getMyLikedTweets(
+        @Param('userId') userId: string,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getLikedTweets(
+            userId,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -57,18 +99,33 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getTweetsByUser(@Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getTweetsByUser(userId, query.options);
+    async getTweetsByUser(
+        @GetUser() user: UserDocument,
+        @Param('userId') userId: string,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getTweetsByUser(
+            userId,
+            query.options,
+            user,
+        );
         return ResponseTool.GET_OK(data, total);
     }
-
 
     @Get('/user-medias/:userId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getUserMedias(@GetUser() user: UserDocument, @Param('userId') userId: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getUserMedias(user, userId, query.options);
+    async getUserMedias(
+        @GetUser() user: UserDocument,
+        @Param('userId') userId: string,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getUserMedias(
+            user,
+            userId,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -76,8 +133,14 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getPopularTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getMostPopularTweets(user, query.options);
+    async getPopularTweets(
+        @GetUser() user: UserDocument,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getMostPopularTweets(
+            user,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -85,8 +148,14 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getLatestTweets(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getLatestTweets(user, query.options);
+    async getLatestTweets(
+        @GetUser() user: UserDocument,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getLatestTweets(
+            user,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -94,15 +163,24 @@ export class TweetController {
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getMedias(@GetUser() user: UserDocument, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getMedias(user, query.options);
+    async getMedias(
+        @GetUser() user: UserDocument,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getMedias(
+            user,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
     @Get('/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
-    async getTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+    async getTweet(
+        @GetUser() user: UserDocument,
+        @Param('tweetId') tweetId: string,
+    ): Promise<ResponseDTO> {
         const tweet = await this.tweetService.getTweet(tweetId, user);
         return ResponseTool.GET_OK(tweet);
     }
@@ -110,46 +188,80 @@ export class TweetController {
     @Patch('/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
-    async updateTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string, @Body() updateTweetDto: CreateTweetDTO): Promise<ResponseDTO> {
-        const updatedTweet = await this.tweetService.updateTweet(tweetId, updateTweetDto, user);
+    async updateTweet(
+        @GetUser() user: UserDocument,
+        @Param('tweetId') tweetId: string,
+        @Body() updateTweetDto: CreateTweetDTO,
+    ): Promise<ResponseDTO> {
+        const updatedTweet = await this.tweetService.updateTweet(
+            tweetId,
+            updateTweetDto,
+            user,
+        );
         return ResponseTool.PATCH_OK(updatedTweet);
     }
 
     @Delete('/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
-    async deleteTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+    async deleteTweet(
+        @GetUser() user: UserDocument,
+        @Param('tweetId') tweetId: string,
+    ): Promise<ResponseDTO> {
         await this.tweetService.deleteTweet(tweetId, user);
-        return ResponseTool.DELETE_OK({ message: "Tweet deleted" });
+        return ResponseTool.DELETE_OK({ message: 'Tweet deleted' });
     }
 
     @Post('/react/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
-    async reactToTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
-        return ResponseTool.POST_OK(await this.tweetService.reactTweet(tweetId, user));
+    async reactToTweet(
+        @GetUser() user: UserDocument,
+        @Param('tweetId') tweetId: string,
+    ): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(
+            await this.tweetService.reactTweet(tweetId, user),
+        );
     }
 
     @Post('/retweet/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
-    async retweetTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
-        return ResponseTool.POST_OK(await this.tweetService.reTweet(tweetId, user));
+    async retweetTweet(
+        @GetUser() user: UserDocument,
+        @Param('tweetId') tweetId: string,
+    ): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(
+            await this.tweetService.reTweet(tweetId, user),
+        );
     }
 
     @Post('/save/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
-    async saveTweet(@GetUser() user: UserDocument, @Param('tweetId') tweetId: string): Promise<ResponseDTO> {
-        return ResponseTool.POST_OK(await this.tweetService.saveTweet(tweetId, user));
+    async saveTweet(
+        @GetUser() user: UserDocument,
+        @Param('tweetId') tweetId: string,
+    ): Promise<ResponseDTO> {
+        return ResponseTool.POST_OK(
+            await this.tweetService.saveTweet(tweetId, user),
+        );
     }
 
     @Get('/hashtag/:name')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
     @ApiQueryGetMany()
-    async getTweetsByHashtag(@GetUser() user: UserDocument, @Param('name') name: string, @QueryGet() query: QueryPostOption): Promise<ResponseDTO> {
-        const { data, total } = await this.tweetService.getTweetsByHashtag(user, name, query.options);
+    async getTweetsByHashtag(
+        @GetUser() user: UserDocument,
+        @Param('name') name: string,
+        @QueryGet() query: QueryPostOption,
+    ): Promise<ResponseDTO> {
+        const { data, total } = await this.tweetService.getTweetsByHashtag(
+            user,
+            name,
+            query.options,
+        );
         return ResponseTool.GET_OK(data, total);
     }
 
@@ -158,5 +270,4 @@ export class TweetController {
         const count = await this.tweetService.countTweetByHashtag(name);
         return ResponseTool.GET_OK(count);
     }
-
 }
