@@ -10,9 +10,10 @@ import { TweetModule } from '../tweet/tweet.module';
         MongooseModule.forFeature([
             { name: Comment.name, schema: CommentSchema },
         ]),
-        TweetModule
+        TweetModule,
     ],
     providers: [CommentService],
     controllers: [CommentController],
+    exports: [CommentService],
 })
-export class CommentModule { }
+export class CommentModule {}
