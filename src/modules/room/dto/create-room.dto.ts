@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsString } from 'class-validator';
 
 export class RoomDTO {
     @IsString()
@@ -16,5 +16,8 @@ export class RoomDTO {
     isPrivate: boolean;
 
     @IsString()
-    image?: string
+    image?: string;
+
+    @IsString()
+    members?: string[];
 }

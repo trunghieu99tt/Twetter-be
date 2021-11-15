@@ -105,11 +105,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 isPrivate: true,
                 name: '',
                 image: '',
+                members: [ownerId, guestId],
             };
-            room = await this.roomService.createRoom(newRoom, [
-                ownerId,
-                guestId,
-            ]);
+            room = await this.roomService.createRoom(newRoom);
         }
 
         // 4. if room is not in connected room list -> add it
@@ -204,16 +202,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
-    @SubscribeMessage('createRoom')
-    async handleGetRoom(@MessageBody() body: any) {
-        const { username, channel } = body;
-        const user = this.connectedUsers.find((e) => e.username === username);
-        const newRoom = await this.roomService.createRoom(channel, [
-            user._id.toString(),
-        ]);
-        this.rooms = [...this.rooms, newRoom];
-        this.server.emit('rooms', this.rooms);
-    }
+    // @SubscribeMessage('createRoom')
+    // async handleGetRoom(@MessageBody() body: any) {
+    //     const { username, channel } = body;
+    //     const user = this.connectedUsers.find((e) => e.username === username);
+    //     const newRoom = await this.roomService.createRoom(channel, [
+    //         user._id.toString(),
+    //     ]);
+    //     this.rooms = [...this.rooms, newRoom];
+    //     this.server.emit('rooms', this.rooms);
+    // }
 
     /**
      * Event when user join a room which that user has not been a member yet
