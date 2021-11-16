@@ -22,6 +22,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server;
 
     rooms: Room[] = [];
+    callingRoom: {
+        [key: string]: {
+            socketId: string;
+            userId: string;
+        }[];
+    } = {};
     connectedUsers: UserDocument[] = [];
     connectedRooms: RoomDocument[] = [];
 
@@ -62,64 +68,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     async handleConnection(client: any, ...args: any[]) {
         console.log('client connected: ', client.id);
-    }
-
-    async getDMRoomByUsers(ownerId: string, guestId: string) {
-        let room = null;
-        // 1. find in connected room if we could find room which is dm
-        // and has 2 users where one of them is author, and other has id equals to roomId
-        room = this.connectedRooms.find((room: RoomDocument) => {
-            const { isDm, members } = room;
-            // 1.1. room must be isDm
-            if (!isDm) return false;
-
-            // 1.2. author of message is in room
-            if (
-                !members.some(
-                    (member: UserDocument) => member._id.toString() === ownerId,
-                )
-            )
-                return false;
-
-            // 1.3. one member has _id equals to roomId
-            if (
-                !members.some(
-                    (member: UserDocument) => member._id.toString() === guestId,
-                )
-            )
-                return false;
-
-            return true;
-        });
-
-        // 2. If we can't find room in connected room, try finding it in db
-        if (!room) {
-            room = await this.roomService.findDmRoom(ownerId, guestId);
-        }
-
-        // 3. If we still can't find any room, create a new room
-        if (!room) {
-            const newRoom: RoomDTO = {
-                description: '',
-                isDm: true,
-                isPrivate: true,
-                name: '',
-                image: '',
-                members: [ownerId, guestId],
-            };
-            room = await this.roomService.createRoom(newRoom);
-        }
-
-        // 4. if room is not in connected room list -> add it
-        if (
-            !this.connectedRooms.find(
-                (connectedRoom: any) => connectedRoom._id === room._id,
-            )
-        ) {
-            this.connectedRooms.push(room);
-        }
-
-        return room;
     }
 
     async getDMRoomById(roomId: string) {
@@ -202,30 +150,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
-    // @SubscribeMessage('createRoom')
-    // async handleGetRoom(@MessageBody() body: any) {
-    //     const { username, channel } = body;
-    //     const user = this.connectedUsers.find((e) => e.username === username);
-    //     const newRoom = await this.roomService.createRoom(channel, [
-    //         user._id.toString(),
-    //     ]);
-    //     this.rooms = [...this.rooms, newRoom];
-    //     this.server.emit('rooms', this.rooms);
-    // }
-
-    /**
-     * Event when user join a room which that user has not been a member yet
-     * @param body
-     */
-    @SubscribeMessage('joinDmRoom')
-    async handleJoinNewRoom(@MessageBody() body: any) {
-        const userIds = body?.userIds;
-        if (userIds?.length === 2) {
-            const room = await this.getDMRoomByUsers(userIds[0], userIds[1]);
-            this.server.emit('joinDmRoom', room);
-        }
-    }
-
     @SubscribeMessage('startCall')
     async handleStartCall(
         @MessageBody() body: any,
@@ -233,31 +157,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         console.log(`body`, body);
 
-        const { senderId, guestId } = body;
-        const guest = this.connectedUsers.find(
-            (e) => e._id.toString() === guestId,
-        );
+        const { room, isVideoCall, senderId } = body;
 
         // 1. update call status of sender
-        this.updateUsers(senderId, guestId);
+        this.updateUsers(senderId, room._id);
 
-        // 2. handle call user
-        if (guest) {
-            // 2.1. if guest in another call -> fire busy message to client
-            if (guest.callingId) {
-                this.server.to(client.id).emit('userIsBusy');
-                this.updateUsers(senderId, null);
+        const memberIds =
+            room?.members?.map((member: UserDocument) =>
+                member._id.toString(),
+            ) || [];
+
+        memberIds?.forEach((userId: string) => {
+            // check if user is online
+            const user = this.connectedUsers.find(
+                (e) => e._id.toString() === userId,
+            );
+
+            if (user?.socketId) {
+                this.server.to(user.socketId).emit('callerConnected', body);
             }
-            // 2.2 if guest is not in another call -> update guest call status
-            else {
-                this.updateUsers(guestId, senderId);
-                this.server.to(guest.socketId).emit('callerConnected', body);
-            }
-        } else {
-            // 2.3. if guest is not in connected users -> guest is offline,
-            // fire event back to client
-            this.server.to(client.id).emit('callingUserIsOffline');
-        }
+        });
+
+        // // 2. handle call user
+        // if (guest) {
+        //     // 2.1. if guest in another call -> fire busy message to client
+        //     if (guest.callingId) {
+        //         this.server.to(client.id).emit('userIsBusy');
+        //         this.updateUsers(senderId, null);
+        //     }
+        //     // 2.2 if guest is not in another call -> update guest call status
+        //     else {
+        //         this.updateUsers(guestId, senderId);
+        //         this.server.to(guest.socketId).emit('callerConnected', body);
+        //     }
+        // } else {
+        //     // 2.3. if guest is not in connected users -> guest is offline,
+        //     // fire event back to client
+        //     this.server.to(client.id).emit('callingUserIsOffline');
+        // }
     }
 
     @SubscribeMessage('endCall')
@@ -299,6 +236,74 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 this.updateUsers(senderId, null);
                 this.server.to(sender.socketId).emit('callDisconnected', body);
             }
+        }
+    }
+
+    @SubscribeMessage('sendingSignal')
+    async handleSendingSignal(
+        @MessageBody() body: any,
+        @ConnectedSocket() client: any,
+    ) {
+        const { userToSignal, signal, callerId } = body;
+        const user = this.connectedUsers.find(
+            (u: UserDocument) => u._id.toString() === userToSignal,
+        );
+
+        if (user?.socketId) {
+            this.server.to(user.socketId).emit('userJoined', {
+                signal,
+                callerId,
+            });
+        }
+    }
+
+    @SubscribeMessage('returningSignal')
+    async handleReturningSignal(
+        @MessageBody() body: any,
+        @ConnectedSocket() client: any,
+    ) {
+        const { signal, callerId } = body;
+        const user = this.connectedUsers.find(
+            (u: UserDocument) => u._id.toString() === callerId,
+        );
+
+        if (user?.socketId) {
+            this.server.to(user.socketId).emit('receivingReturnedSignal', {
+                signal,
+                id: client.id,
+            });
+        }
+    }
+
+    @SubscribeMessage('joinRoom')
+    async handleJoinRoom(@MessageBody() body: any) {
+        const { userId, roomId } = body;
+        const user = this.connectedUsers.find(
+            (u: UserDocument) => u._id.toString() === userId,
+        );
+        if (user?.socketId) {
+            
+            const newUserJoinsRoom = {
+                userId: user._id.toString(),
+                socketId: user.socketId,
+            }
+            
+            if (this.callingRoom[roomId]) {
+                this.callingRoom[roomId].push(newUserJoinsRoom);
+            } else {
+                this.callingRoom[roomId] = [newUserJoinsRoom];
+            }
+            
+            const roomUserIdsExceptUser = this.callingRoom[roomId].filter(
+                (u: any) => u.userId !== userId,
+            ).map((u: any) => u.userId);
+            
+            this.callingRoom[roomId].forEach((userInRoom) => {
+                if(userInRoom.userId !== userId) {
+                    this.server.to(userInRoom.socketId).emit('allUsers', roomUserIdsExceptUser);
+                }
+            }
+            
         }
     }
 

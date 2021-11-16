@@ -51,7 +51,6 @@ export class RoomService {
             }),
         );
 
-        console.log(`roomDto`, roomDto);
         if (usersLists?.length > 0) {
             const newRoomObj = {
                 name: roomDto.name || '',
@@ -63,6 +62,20 @@ export class RoomService {
                 updatedAt: new Date(),
                 isDm: members.length === 2,
             };
+
+            // check if we have room with same members
+            const room = await this.roomModel
+                .findOne({
+                    members: usersLists,
+                })
+                .exec();
+
+            console.log(`room`, room);
+
+            if (room) {
+                throw new BadRequestException('Room already exist!');
+            }
+
             const newRoom = new this.roomModel(newRoomObj);
             console.log(`newRoom`, newRoom);
 
@@ -185,7 +198,16 @@ export class RoomService {
         return room;
     }
 
-    async deleteRoom(id: string) {
+    async deleteRoom(id: string, user: UserDocument) {
+        const room = await this.findById(id);
+        if (!room) {
+            throw new NotFoundException(`Room with ${id} not found!`);
+        }
+        if (room.owner._id.toString() !== user._id.toString()) {
+            throw new UnauthorizedException(
+                'You do not have right to delete this room!',
+            );
+        }
         return await this.roomModel.findByIdAndDelete(id).exec();
     }
 }

@@ -1,6 +1,7 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     Inject,
     Param,
@@ -47,5 +48,15 @@ export class RoomController {
         const newRoom = await this.roomService.createRoom(body);
 
         return ResponseTool.POST_OK(newRoom);
+    }
+
+    @Delete('/:roomId')
+    @UseGuards(MyTokenAuthGuard)
+    async deleteRoom(
+        @GetUser() user: UserDocument,
+        @Param('roomId') roomId: string,
+    ) {
+        await this.roomService.deleteRoom(roomId, user);
+        return ResponseTool.DELETE_OK('OK');
     }
 }
