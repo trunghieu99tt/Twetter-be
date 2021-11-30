@@ -1,5 +1,3 @@
-import { ConsoleLogger, Logger, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import {
     ConnectedSocket,
     MessageBody,
@@ -10,16 +8,15 @@ import {
     WebSocketServer,
 } from '@nestjs/websockets';
 import { MessageService } from '../message/message.service';
-import { RoomDTO } from '../room/dto/create-room.dto';
 import { Room, RoomDocument } from '../room/room.entity';
 import { RoomService } from '../room/room.service';
-import { User, UserDocument } from '../user/user.entity';
-import { UserService } from '../user/user.service';
+import { UserDocument } from '../user/user.entity';
+import { Server } from 'socket.io';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
-    server;
+    server: Server;
 
     rooms: Room[] = [];
     callingRoom: {
@@ -32,14 +29,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     connectedRooms: RoomDocument[] = [];
 
     constructor(
-        private jwtService: JwtService,
-        private userService: UserService,
         private roomService: RoomService,
         private messageService: MessageService,
     ) {}
 
     async handleDisconnect(client: any) {
-        console.log('client disconnected: ', client.id);
         // 1. remove user from connected users
         const user = this.connectedUsers.find((e) => e.socketId === client.id);
 
@@ -51,6 +45,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 (user: UserDocument) => user.socketId !== client.id,
             );
 
+            this.processEndCall(user._id.toString());
             this.server.emit('users', this.connectedUsers);
 
             // 2.2 update user call status
@@ -88,11 +83,86 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // update call status of user
     updateUsers = (userId: string, callingId: string) => {
         this.connectedUsers.forEach((user: UserDocument) => {
-            if (user._id.toString() === userId) {
+            if (user._id.toString() === userId.toString()) {
                 user.callingId = callingId;
             }
         });
     };
+
+    findConnectedUserById(userId: string) {
+        if (userId) {
+            return this.connectedUsers.find(
+                (user: UserDocument) =>
+                    user._id.toString() === userId.toString(),
+            );
+        }
+    }
+
+    processEndCall(userId: string) {
+        const user = this.findConnectedUserById(userId);
+        const callingId = user?.callingId;
+
+        if (callingId) {
+            this.updateUsers(userId, null);
+
+            const callingRoom = this.callingRoom[callingId];
+
+            const newCallingRoom = callingRoom.filter(
+                (user: { socketId: string; userId: string }) =>
+                    user.userId !== userId,
+            );
+
+            if (newCallingRoom?.length < 2) {
+                // emit close call event to every user in the room
+                newCallingRoom.forEach(
+                    (user: { socketId: string; userId: string }) => {
+                        this.updateUsers(user.userId, null);
+                        this.server.to(user.socketId).emit('closeCall');
+                    },
+                );
+                this.callingRoom[callingId] = [];
+            } else {
+                this.callingRoom[callingId] = newCallingRoom;
+                newCallingRoom.forEach(
+                    (user: { socketId: string; userId: string }) => {
+                        this.server.to(user.socketId).emit('userLeft', userId);
+                    },
+                );
+            }
+        }
+    }
+
+    addUserToRoom(
+        roomId: string,
+        newUserJoinsRoom: {
+            userId: string;
+            socketId: string;
+        },
+    ) {
+        const { userId, socketId } = newUserJoinsRoom;
+        if (this.callingRoom[roomId]) {
+            // only add user if he's not in the room
+            if (
+                !this.callingRoom[roomId].some(
+                    (user: { socketId: string; userId: string }) =>
+                        user.userId === userId,
+                )
+            ) {
+                this.callingRoom[roomId].push(newUserJoinsRoom);
+            } else {
+                this.callingRoom[roomId] = this.callingRoom[roomId].map(
+                    (user: { socketId: string; userId: string }) => {
+                        if (user.userId === userId) {
+                            user.socketId = socketId;
+                        }
+                        return user;
+                    },
+                );
+            }
+        } else {
+            this.callingRoom[roomId] = [newUserJoinsRoom];
+        }
+    }
 
     @SubscribeMessage('userOn')
     addUser(@MessageBody() body: any, @ConnectedSocket() client: any) {
@@ -102,6 +172,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             callingId: null,
         });
         this.server.emit('users', this.connectedUsers);
+        this.server.socketsJoin(client.id);
     }
 
     @SubscribeMessage('userOff')
@@ -109,6 +180,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.connectedUsers = this.connectedUsers.filter(
             (user: UserDocument) => user._id !== body._id,
         );
+        this.processEndCall(body._id.toString());
         this.server.emit('users', this.connectedUsers);
     }
 
@@ -151,159 +223,139 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     @SubscribeMessage('startCall')
-    async handleStartCall(
-        @MessageBody() body: any,
-        @ConnectedSocket() client: any,
-    ) {
-        console.log(`body`, body);
+    async handleStartCall(@MessageBody() body: any) {
+        const { room, senderId } = body;
 
-        const { room, isVideoCall, senderId } = body;
+        const sender = this.findConnectedUserById(senderId);
+        const roomId = room._id;
 
-        // 1. update call status of sender
         this.updateUsers(senderId, room._id);
 
-        const memberIds =
-            room?.members?.map((member: UserDocument) =>
-                member._id.toString(),
-            ) || [];
+        const newRoomMember = {
+            socketId: sender.socketId,
+            userId: senderId,
+        };
 
-        memberIds?.forEach((userId: string) => {
-            // check if user is online
-            const user = this.connectedUsers.find(
-                (e) => e._id.toString() === userId,
-            );
+        if (this.callingRoom[roomId]) {
+            // only add user if he's not in the room
+            if (
+                !this.callingRoom[roomId].some(
+                    (user: { socketId: string; userId: string }) =>
+                        user.userId === senderId,
+                )
+            ) {
+                this.callingRoom[roomId].push(newRoomMember);
+            }
+        } else {
+            this.callingRoom[roomId] = [newRoomMember];
+        }
 
-            if (user?.socketId) {
-                this.server.to(user.socketId).emit('callerConnected', body);
+        room?.members?.forEach((member: UserDocument) => {
+            if (member._id.toString() !== senderId.toString()) {
+                const user = this.findConnectedUserById(member._id);
+                if (user && !user?.callingId) {
+                    if (user?.socketId) {
+                        this.server.to(user.socketId).emit('hasCall', body);
+                    }
+                }
             }
         });
-
-        // // 2. handle call user
-        // if (guest) {
-        //     // 2.1. if guest in another call -> fire busy message to client
-        //     if (guest.callingId) {
-        //         this.server.to(client.id).emit('userIsBusy');
-        //         this.updateUsers(senderId, null);
-        //     }
-        //     // 2.2 if guest is not in another call -> update guest call status
-        //     else {
-        //         this.updateUsers(guestId, senderId);
-        //         this.server.to(guest.socketId).emit('callerConnected', body);
-        //     }
-        // } else {
-        //     // 2.3. if guest is not in connected users -> guest is offline,
-        //     // fire event back to client
-        //     this.server.to(client.id).emit('callingUserIsOffline');
-        // }
     }
 
-    @SubscribeMessage('endCall')
-    async handleEndCall(
-        @MessageBody() body: any,
-        @ConnectedSocket() client: any,
-    ) {
-        const { senderId, guestId } = body;
-        // 1. find users
-        const sender = this.connectedUsers.find(
-            (e) => e._id.toString() === senderId,
-        );
-        const guest = this.connectedUsers.find(
-            (e) => e._id.toString() === guestId,
-        );
+    @SubscribeMessage('requestEndCall')
+    async handleEndCall(@MessageBody() leftUserId: string) {
+        this.processEndCall(leftUserId);
+    }
 
-        console.log(`sender.socketId`, sender?.socketId);
-        console.log(`guest.socketId`, guest?.socketId);
-        console.log(
-            'connectedSockets: ',
-            this.connectedUsers.map((e) => ({
-                socketId: e.socketId,
-                userId: e._id.toString(),
-            })),
-        );
+    @SubscribeMessage('requestJoinRoom')
+    async handleJoinRoom(@MessageBody() body: any) {
+        const { userId, roomId } = body;
+        const user = this.findConnectedUserById(userId);
 
-        // 2. update call status
-        if (guest) {
-            /**
-             * 2.2. update call status of both sender and guest
-             * We have to do it because we can end call from both sender and guest
-             * so client isn't guaranteed to be the sender
-             */
-            if (guest) {
-                this.updateUsers(guestId, null);
-                this.server.to(guest.socketId).emit('callDisconnected', body);
-            }
-            if (sender) {
-                this.updateUsers(senderId, null);
-                this.server.to(sender.socketId).emit('callDisconnected', body);
-            }
+        if (user?.socketId) {
+            const newUserJoinsRoom = {
+                userId: user._id.toString(),
+                socketId: user.socketId,
+            };
+
+            this.addUserToRoom(roomId, newUserJoinsRoom);
+            this.updateUsers(userId, roomId);
+
+            const roomUserIds = this.callingRoom[roomId]
+                .map((u: any) => u.userId)
+                .filter((u: any) => u !== userId);
+
+            console.log('requestUserId: ', userId);
+            console.log('request user socket: ', user.socketId);
+            console.log(`this.callingRoom[roomId]`, this.callingRoom[roomId]);
+            console.log('other user in room: ', roomUserIds);
+
+            this.server.to(user.socketId).emit('otherUsersInRoom', roomUserIds);
         }
     }
 
     @SubscribeMessage('sendingSignal')
-    async handleSendingSignal(
-        @MessageBody() body: any,
-        @ConnectedSocket() client: any,
-    ) {
-        const { userToSignal, signal, callerId } = body;
-        const user = this.connectedUsers.find(
-            (u: UserDocument) => u._id.toString() === userToSignal,
-        );
+    async handleSendingSignal(@MessageBody() body: any) {
+        const { targetUserId, currentUserId, signal } = body;
 
-        if (user?.socketId) {
-            this.server.to(user.socketId).emit('userJoined', {
+        const targetUser = this.findConnectedUserById(targetUserId);
+
+        if (targetUser?.socketId) {
+            this.server.to(targetUser.socketId).emit('userJoined', {
                 signal,
-                callerId,
+                newUserId: currentUserId,
             });
         }
     }
 
     @SubscribeMessage('returningSignal')
-    async handleReturningSignal(
-        @MessageBody() body: any,
-        @ConnectedSocket() client: any,
-    ) {
-        const { signal, callerId } = body;
-        const user = this.connectedUsers.find(
-            (u: UserDocument) => u._id.toString() === callerId,
-        );
+    async handleReturningSignal(@MessageBody() body: any) {
+        const { signal, newUserId, signalOwnerId } = body;
+        const newUser = this.findConnectedUserById(newUserId);
 
-        if (user?.socketId) {
-            this.server.to(user.socketId).emit('receivingReturnedSignal', {
+        if (newUser?.socketId) {
+            this.server.to(newUser.socketId).emit('receivingReturnedSignal', {
                 signal,
-                id: client.id,
+                signalOwnerId,
             });
         }
     }
 
-    @SubscribeMessage('joinRoom')
-    async handleJoinRoom(@MessageBody() body: any) {
-        const { userId, roomId } = body;
-        const user = this.connectedUsers.find(
-            (u: UserDocument) => u._id.toString() === userId,
-        );
-        if (user?.socketId) {
-            
-            const newUserJoinsRoom = {
-                userId: user._id.toString(),
+    @SubscribeMessage('userChangeSetting')
+    async handleUserChangeSetting(@MessageBody() body: any) {
+        const { data, roomId, currentUserId } = body;
+
+        this.callingRoom[roomId].forEach((userInRoom) => {
+            if (userInRoom.userId !== currentUserId) {
+                this.server
+                    .to(userInRoom.socketId)
+                    .emit('userChangeSetting', data);
+            }
+        });
+    }
+
+    @SubscribeMessage('answerCall')
+    async handleAnswerCall(@MessageBody() body: any) {
+        const { ownerCallId, userId, roomId } = body;
+
+        console.log(`userId`, userId);
+
+        const ownerCall = this.findConnectedUserById(ownerCallId);
+        const user = this.findConnectedUserById(userId);
+
+        console.log(`user`, user);
+
+        console.log(`ownerCall`, ownerCall._id, ownerCall.socketId);
+        console.log(`user`, user._id, user.socketId);
+
+        if (ownerCall?.socketId && user?.socketId) {
+            this.updateUsers(userId, roomId);
+            this.addUserToRoom(roomId, {
+                userId,
                 socketId: user.socketId,
-            }
-            
-            if (this.callingRoom[roomId]) {
-                this.callingRoom[roomId].push(newUserJoinsRoom);
-            } else {
-                this.callingRoom[roomId] = [newUserJoinsRoom];
-            }
-            
-            const roomUserIdsExceptUser = this.callingRoom[roomId].filter(
-                (u: any) => u.userId !== userId,
-            ).map((u: any) => u.userId);
-            
-            this.callingRoom[roomId].forEach((userInRoom) => {
-                if(userInRoom.userId !== userId) {
-                    this.server.to(userInRoom.socketId).emit('allUsers', roomUserIdsExceptUser);
-                }
-            }
-            
+            });
+
+            this.server.to(ownerCall.socketId).emit('answerCall', body);
         }
     }
 
