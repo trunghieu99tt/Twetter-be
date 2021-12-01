@@ -34,7 +34,6 @@ export const DATABASE_URL = `mongodb+srv://${MONGO_USERNAME}:${MONGO_PASSWORD}@c
 // swagger
 export const SWAGGER_PATH = getEnv('SWAGGER_PATH');
 
-
 // Auth
 export const JWT_SECRET = getEnv('JWT_SECRET');
 export const JWT_EXP = Number(getEnv('JWT_EXP'));
@@ -51,3 +50,7 @@ export const GITHUB_CLIENT_SECRET = getEnv('GITHUB_CLIENT_SECRET');
 // Mailer
 export const MAILER_EMAIL_ID = getEnv('MAILER_EMAIL_ID');
 export const MAILER_PASSWORD = getEnv('MAILER_PASSWORD');
+
+// Agora
+export const AGORA_APP_ID = getEnv('AGORA_APP_ID');
+export const AGORA_APP_CERTIFICATE = getEnv('AGORA_APP_CERTIFICATE');

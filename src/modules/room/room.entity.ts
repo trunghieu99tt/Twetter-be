@@ -1,20 +1,19 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsBoolean, IsDate, IsString } from "class-validator";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { IsBoolean, IsDate, IsString } from 'class-validator';
 import * as mongoose from 'mongoose';
-import { User, UserDocument } from "../user/user.entity";
+import { User, UserDocument } from '../user/user.entity';
 
 @Schema({
     collection: 'rooms',
     toJSON: {
         virtuals: true,
-    }
+    },
 })
 export class Room {
-
     _id: string;
 
     @IsString()
-    @Prop()
+    @Prop(String)
     name: string;
 
     @IsString()
@@ -22,16 +21,16 @@ export class Room {
     roomId: string;
 
     @IsString()
-    @Prop()
+    @Prop(String)
     description: string;
 
     @IsString()
-    @Prop()
+    @Prop(String)
     image: string;
 
     @IsDate()
     @Prop(Date)
-    createdAt: Date
+    createdAt: Date;
 
     @IsDate()
     @Prop(Date)
@@ -54,4 +53,4 @@ export class Room {
 
 export const RoomSchema = SchemaFactory.createForClass(Room);
 
-export interface RoomDocument extends Room, Document { };
+export interface RoomDocument extends Room, Document {}
