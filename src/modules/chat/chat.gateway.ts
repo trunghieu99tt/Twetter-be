@@ -285,11 +285,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 .map((u: any) => u.userId)
                 .filter((u: any) => u !== userId);
 
-            console.log('requestUserId: ', userId);
-            console.log('request user socket: ', user.socketId);
-            console.log(`this.callingRoom[roomId]`, this.callingRoom[roomId]);
-            console.log('other user in room: ', roomUserIds);
-
             this.server.to(user.socketId).emit('otherUsersInRoom', roomUserIds);
         }
     }
@@ -336,23 +331,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('answerCall')
     async handleAnswerCall(@MessageBody() body: any) {
-        const { ownerCallId, userId, roomId } = body;
-
-        console.log(`userId`, userId);
-
+        const { ownerCallId, userRepliedId, roomId } = body;
         const ownerCall = this.findConnectedUserById(ownerCallId);
-        const user = this.findConnectedUserById(userId);
-
-        console.log(`user`, user);
+        const userReplied = this.findConnectedUserById(userRepliedId);
 
         console.log(`ownerCall`, ownerCall._id, ownerCall.socketId);
-        console.log(`user`, user._id, user.socketId);
+        console.log(`user`, userReplied._id, userReplied.socketId);
 
-        if (ownerCall?.socketId && user?.socketId) {
-            this.updateUsers(userId, roomId);
+        if (ownerCall?.socketId && userReplied?.socketId) {
+            this.updateUsers(userRepliedId, roomId);
             this.addUserToRoom(roomId, {
-                userId,
-                socketId: user.socketId,
+                userId: userRepliedId,
+                socketId: userReplied.socketId,
             });
 
             this.server.to(ownerCall.socketId).emit('answerCall', body);
@@ -365,12 +355,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(`body`, body);
         const receivers = body?.receivers || [];
         receivers.forEach((id: string) => {
-            console.log(`this.connectedUsers`, this.connectedUsers);
-            console.log(`id`, id);
             const user = this.connectedUsers.find(
                 (e) => e._id.toString() === id,
             );
-            console.log(`user`, user);
             if (user) {
                 this.server.to(user.socketId).emit('newNotification', body);
             }

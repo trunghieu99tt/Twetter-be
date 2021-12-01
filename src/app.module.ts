@@ -12,6 +12,7 @@ import { StoryModule } from './modules/story/story.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { HashtagModule } from './modules/hashtag/hashtag.module';
 import { SearchModule } from './modules/search/search.module';
+import { AgoraModule } from './modules/agora/Agora.module';
 
 @Module({
     imports: [
@@ -33,6 +34,7 @@ import { SearchModule } from './modules/search/search.module';
         NotificationModule,
         HashtagModule,
         SearchModule,
+        AgoraModule,
     ],
     controllers: [],
     providers: [],
