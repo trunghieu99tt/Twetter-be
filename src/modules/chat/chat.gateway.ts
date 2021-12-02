@@ -166,13 +166,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('userOn')
     addUser(@MessageBody() body: any, @ConnectedSocket() client: any) {
+        console.log('userOn: ', body);
         this.connectedUsers.push({
             ...body,
             socketId: client.id,
             callingId: null,
         });
         this.server.emit('users', this.connectedUsers);
-        this.server.socketsJoin(client.id);
     }
 
     @SubscribeMessage('userOff')
