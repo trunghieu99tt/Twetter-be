@@ -166,13 +166,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('userOn')
     addUser(@MessageBody() body: any, @ConnectedSocket() client: any) {
-        this.connectedUsers.push({
-            ...body,
-            socketId: client.id,
-            callingId: null,
-        });
-        this.server.emit('users', this.connectedUsers);
-        this.server.socketsJoin(client.id);
+        const newUserId = body?._id;
+        if (newUserId) {
+            const findUser = this.findConnectedUserById(newUserId);
+            if (!findUser) {
+                this.connectedUsers.push({
+                    ...body,
+                    socketId: client.id,
+                    callingId: null,
+                });
+                this.server.emit('users', this.connectedUsers);
+            }
+        }
     }
 
     @SubscribeMessage('userOff')
@@ -352,12 +357,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // notifications
     @SubscribeMessage('createNotification')
     async handleCreateNotification(@MessageBody() body: any) {
-        console.log(`createNotification body`, body);
         const receivers = body?.receivers || [];
+        console.log(`receivers`, receivers);
+        console.log(`connectedUsers`, this.connectedUsers);
         receivers.forEach((id: string) => {
             const user = this.connectedUsers.find(
                 (e) => e._id.toString() === id,
             );
+            console.log('userId: ', user);
             if (user) {
                 this.server.to(user.socketId).emit('newNotification', body);
             }
