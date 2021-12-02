@@ -74,6 +74,7 @@ export class TweetService {
         );
 
         let conditions: any = {
+            author: user,
             audience: 0,
         };
 

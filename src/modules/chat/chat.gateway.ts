@@ -352,12 +352,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // notifications
     @SubscribeMessage('createNotification')
     async handleCreateNotification(@MessageBody() body: any) {
-        console.log(`createNotification body`, body);
         const receivers = body?.receivers || [];
+        console.log(`receivers`, receivers);
+        console.log(`connectedUsers`, this.connectedUsers);
         receivers.forEach((id: string) => {
             const user = this.connectedUsers.find(
                 (e) => e._id.toString() === id,
             );
+            console.log('userId: ', user);
             if (user) {
                 this.server.to(user.socketId).emit('newNotification', body);
             }
