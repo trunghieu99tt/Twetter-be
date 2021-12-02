@@ -121,6 +121,7 @@ export class TweetController {
         @Param('userId') userId: string,
         @QueryGet() query: QueryPostOption,
     ): Promise<ResponseDTO> {
+        console.log('Go get user media: ', userId);
         const { data, total } = await this.tweetService.getUserMedias(
             user,
             userId,

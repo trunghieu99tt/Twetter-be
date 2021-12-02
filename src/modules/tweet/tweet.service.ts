@@ -12,6 +12,7 @@ import { CreateTweetDTO } from './dto/createTweet.dto';
 import { Tweet, TweetDocument } from './tweet.entity';
 import { UserService } from '../user/user.service';
 import { ResponseDTO } from 'src/common/dto/response.dto';
+import { ObjectId } from 'mongodb';
 
 @Injectable()
 export class TweetService {
@@ -156,18 +157,15 @@ export class TweetService {
             // if tweet is public
             case '0':
                 return tweet;
-            // if tweet is public/followers
+            // if tweet is only visible for followers
             case '1': {
-                if (
-                    userId !== tweetAuthorId ||
-                    (isRetweet && userId !== retweetedById)
-                ) {
-                    return tweet;
-                }
+                if (userId === tweetAuthorId) return tweet;
 
                 // check if user is following the author
                 if (
-                    !tweet?.author?.followers?.includes(userId) &&
+                    !tweet?.author?.followers?.some(
+                        (u) => u._id.toString() === userId,
+                    ) &&
                     !user?.following?.includes(tweetAuthorId)
                 ) {
                     throw new BadRequestException(
@@ -486,20 +484,32 @@ export class TweetService {
         const following = userParam.following;
 
         let conditions: any = {
-            author: userParam._id,
+            author: new ObjectId(userId),
         };
 
         if (userParam._id.toString() !== userId) {
             user = await this.userService.findById(userId);
-            conditions = {
-                $and: [
-                    { author: user },
-                    {
-                        $or: [{ audience: 0 }, { author: { $in: following } }],
-                    },
-                ],
-            };
+
+            const isUserFollowing = following.some(
+                (u: UserDocument) => u._id.toString() === userId,
+            );
+            console.log(`following`, following);
+            console.log(`isUserFollowing`, isUserFollowing);
+
+            if (isUserFollowing) {
+                conditions = {
+                    ...conditions,
+                    audience: { $in: [0, 1] },
+                };
+            } else {
+                conditions = {
+                    ...conditions,
+                    audience: 0,
+                };
+            }
         }
+
+        console.log(`conditions getUserMedias`, conditions);
 
         const aggregation = [
             {

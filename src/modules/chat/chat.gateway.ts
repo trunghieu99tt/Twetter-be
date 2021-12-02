@@ -175,7 +175,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     socketId: client.id,
                     callingId: null,
                 });
-                console.log(`connectedUsers`, this.connectedUsers);
                 this.server.emit('users', this.connectedUsers);
             }
         }
