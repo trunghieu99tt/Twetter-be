@@ -117,7 +117,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 newCallingRoom.forEach(
                     (user: { socketId: string; userId: string }) => {
                         this.updateUsers(user.userId, null);
-                        this.server.to(user.socketId).emit('closeCall');
+                        this.server.to(user.socketId).emit('closeCall', {
+                            roomId: callingId,
+                        });
                     },
                 );
                 this.callingRoom[callingId] = [];
@@ -340,9 +342,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const ownerCall = this.findConnectedUserById(ownerCallId);
         const userReplied = this.findConnectedUserById(userRepliedId);
 
-        console.log(`ownerCall`, ownerCall._id, ownerCall.socketId);
-        console.log(`user`, userReplied._id, userReplied.socketId);
-
         if (ownerCall?.socketId && userReplied?.socketId) {
             this.updateUsers(userRepliedId, roomId);
             this.addUserToRoom(roomId, {
@@ -351,6 +350,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             });
 
             this.server.to(ownerCall.socketId).emit('answerCall', body);
+        }
+    }
+
+    @SubscribeMessage('roomHasCall')
+    async handleRoomHasCall(@MessageBody() body: any) {
+        const { roomId } = body;
+        const callingRoom = this.callingRoom[roomId];
+        if (callingRoom) {
+            callingRoom.forEach((userInRoom) => {
+                this.server.to(userInRoom.socketId).emit('roomHasCall', body);
+            });
         }
     }
 
