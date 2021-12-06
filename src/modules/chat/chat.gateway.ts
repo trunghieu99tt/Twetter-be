@@ -75,6 +75,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // 2. if we can't find room in connected room, try finding it in db
         if (!room) {
             room = await this.roomService.findById(roomId);
+            this.connectedRooms.push(room);
         }
 
         return room;
@@ -100,12 +101,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     processEndCall(userId: string) {
         const user = this.findConnectedUserById(userId);
-        const callingId = user?.callingId;
+        const roomId = user?.callingId;
 
-        if (callingId) {
+        if (roomId) {
             this.updateUsers(userId, null);
 
-            const callingRoom = this.callingRoom[callingId];
+            const callingRoom = this.callingRoom[roomId];
 
             const newCallingRoom = callingRoom.filter(
                 (user: { socketId: string; userId: string }) =>
@@ -117,12 +118,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 newCallingRoom.forEach(
                     (user: { socketId: string; userId: string }) => {
                         this.updateUsers(user.userId, null);
-                        this.server.to(user.socketId).emit('closeCall');
+                        this.server.to(user.socketId).emit('closeCall', {
+                            roomId: roomId,
+                        });
                     },
                 );
-                this.callingRoom[callingId] = [];
+                this.callingRoom[roomId] = [];
+                this.changeRoomCallState(roomId, false);
             } else {
-                this.callingRoom[callingId] = newCallingRoom;
+                this.callingRoom[roomId] = newCallingRoom;
                 newCallingRoom.forEach(
                     (user: { socketId: string; userId: string }) => {
                         this.server.to(user.socketId).emit('userLeft', userId);
@@ -164,6 +168,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
+    async changeRoomCallState(roomId: string, hasCall: boolean) {
+        const room = await this.getDMRoomById(roomId);
+        if (room) {
+            room?.members?.forEach((member: UserDocument) => {
+                const connectedUser = this.findConnectedUserById(member._id);
+                if (connectedUser?.socketId) {
+                    this.server
+                        .to(connectedUser.socketId)
+                        .emit('roomCallStateChanged', {
+                            roomId,
+                            hasCall,
+                        });
+                }
+            });
+        }
+    }
+
     @SubscribeMessage('userOn')
     addUser(@MessageBody() body: any, @ConnectedSocket() client: any) {
         const newUserId = body?._id;
@@ -194,17 +215,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (body) {
             const roomId = body.roomId;
             try {
-                let room = null;
-
-                // 1. check if room is in connected rooms
-                room = this.connectedRooms.find(
-                    (room: RoomDocument) => room._id.toString() === roomId,
-                );
-
-                // 2. if not, get room from db and add it to connected rooms
-                if (!room) {
-                    room = await this.getDMRoomById(roomId);
-                }
+                const room = await this.getDMRoomById(roomId);
 
                 const newMessage = await this.messageService.createMessage(
                     body,
@@ -340,17 +351,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const ownerCall = this.findConnectedUserById(ownerCallId);
         const userReplied = this.findConnectedUserById(userRepliedId);
 
-        console.log(`ownerCall`, ownerCall._id, ownerCall.socketId);
-        console.log(`user`, userReplied._id, userReplied.socketId);
-
         if (ownerCall?.socketId && userReplied?.socketId) {
             this.updateUsers(userRepliedId, roomId);
             this.addUserToRoom(roomId, {
                 userId: userRepliedId,
                 socketId: userReplied.socketId,
             });
-
             this.server.to(ownerCall.socketId).emit('answerCall', body);
+            this.changeRoomCallState(roomId, true);
+        }
+    }
+
+    @SubscribeMessage('roomHasCall')
+    async handleRoomHasCall(@MessageBody() body: any) {
+        if (body?.roomId) {
+            const room = this.connectedRooms.find(
+                (r: RoomDocument) => r._id.toString() === body.roomId,
+            );
+            if (room) {
+                room.members.forEach((member: UserDocument) => {
+                    const user = this.findConnectedUserById(member._id);
+                    if (user?.socketId) {
+                        this.server.to(user.socketId).emit('roomHasCall', body);
+                    }
+                });
+            }
         }
     }
 
