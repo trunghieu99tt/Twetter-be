@@ -266,7 +266,10 @@ export class UserService {
     async getPopularUsers(
         user: UserDocument,
         option: QueryOption,
-    ): Promise<UserDocument[]> {
+    ): Promise<{
+        data: UserDocument[];
+        total: number;
+    }> {
         // return data sorted by length of followers array
         const data = await this.userModel
             .aggregate([
@@ -290,14 +293,22 @@ export class UserService {
             .skip(option.skip)
             .limit(option.limit)
             .exec();
+
         await this.userModel.populate(data, {
             path: 'followers',
             select: '_id',
         });
 
-        console.log(`data`, data);
+        const conditions = {
+            _id: { $ne: user._id },
+            followers: { $ne: user._id },
+        };
+        const count = await this.userModel.countDocuments(conditions);
 
-        return data;
+        return {
+            data,
+            total: count,
+        };
     }
 
     count({ conditions }: { conditions?: any } = {}): Promise<number> {

@@ -79,10 +79,11 @@ export class UserController {
         @GetUser() user: UserDocument,
         @QueryGet() query: QueryPostOption,
     ): Promise<ResponseDTO> {
-        console.log('Go here');
-        return ResponseTool.GET_OK(
-            await this.userService.getPopularUsers(user, query.options),
+        const { data, total } = await this.userService.getPopularUsers(
+            user,
+            query.options,
         );
+        return ResponseTool.GET_OK(data, total);
     }
 
     @Get('/:userId')
