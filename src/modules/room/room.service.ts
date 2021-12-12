@@ -77,12 +77,7 @@ export class RoomService {
             }
 
             const newRoom = new this.roomModel(newRoomObj);
-            console.log(`newRoom`, newRoom);
-
             const newRoomDb = await newRoom.save();
-
-            console.log(`newRoomDb`, newRoomDb);
-
             return newRoomDb;
         } else {
             throw new BadRequestException('Users not found!');

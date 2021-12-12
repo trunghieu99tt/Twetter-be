@@ -23,6 +23,7 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 // constants
 import { MSG } from 'src/common/config/constants';
 import { ResponseDTO } from 'src/common/dto/response.dto';
+import { ObjectId } from 'mongodb';
 @Injectable()
 export class UserService {
     constructor(
@@ -174,8 +175,6 @@ export class UserService {
     ): Promise<UserDocument> {
         const newUserInfo = await this.preUpdateUserHook(userId, data);
 
-        console.log(`newUserInfo.password`, newUserInfo.password);
-
         try {
             const response = await this.userModel.findOneAndUpdate(
                 {
@@ -191,6 +190,21 @@ export class UserService {
         } catch (error) {
             throw new BadRequestException(error);
         }
+    }
+
+    async updateUserById(
+        userId: string,
+        data: UpdateUserDTO,
+        requestUser: UserDocument,
+    ): Promise<UserDocument> {
+        if (['admin', 'root-admin'].includes(requestUser.role)) {
+            throw new BadRequestException(
+                UserService.name,
+                'You are not admin',
+            );
+        }
+
+        return this.updateUser(userId, data);
     }
 
     async findByGoogleId(id: string): Promise<UserDocument> {
@@ -280,6 +294,9 @@ export class UserService {
             path: 'followers',
             select: '_id',
         });
+
+        console.log(`data`, data);
+
         return data;
     }
 
@@ -308,7 +325,22 @@ export class UserService {
                     },
                 },
                 {
-                    bio: {
+                    email: {
+                        $regex: search,
+                        $options: 'i',
+                    },
+                },
+                {
+                    userName: {
+                        $regex: search,
+                        $options: 'i',
+                    },
+                },
+                {
+                    id: search,
+                },
+                {
+                    status: {
                         $regex: search,
                         $options: 'i',
                     },
@@ -317,5 +349,37 @@ export class UserService {
         };
 
         return this.findAllAndCount(query.options, conditions);
+    }
+
+    async getUserList(query: QueryPostOption) {
+        const conditions = {
+            $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+        };
+
+        return this.findAllAndCount(query.options, conditions);
+    }
+
+    async deleteUser(userId: string) {
+        try {
+            return this.userModel.findByIdAndDelete(userId);
+        } catch (error) {
+            throw new BadRequestException(error);
+        }
+    }
+
+    async followAnonymous({ userAId, userBId }) {
+        // add userB to following list of userA
+        const userA = await this.findById(userAId);
+        if (!userA.following.some((user) => user._id.toString() === userBId)) {
+            const userB = await this.findById(userBId);
+            userA.following.push(userB);
+            userB.followers.push(userA);
+            await this.userModel.findByIdAndUpdate(userA._id, {
+                following: userA.following,
+            });
+            await this.userModel.findByIdAndUpdate(userB._id, {
+                followers: userB.followers,
+            });
+        }
     }
 }

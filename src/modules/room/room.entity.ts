@@ -16,9 +16,9 @@ export class Room {
     @Prop(String)
     name: string;
 
-    @IsString()
-    @Prop()
-    roomId: string;
+    // @IsString()
+    // @Prop()
+    // roomId: string;
 
     @IsString()
     @Prop(String)
@@ -36,9 +36,9 @@ export class Room {
     @Prop(Date)
     updatedAt: Date;
 
-    @IsBoolean()
-    @Prop(Boolean)
-    isPrivate: boolean;
+    // @IsBoolean()
+    // @Prop(Boolean)
+    // isPrivate: boolean;
 
     @IsBoolean()
     @Prop(Boolean)

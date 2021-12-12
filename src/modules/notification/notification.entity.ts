@@ -1,20 +1,16 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsString } from "class-validator";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { IsString } from 'class-validator';
 import * as mongoose from 'mongoose';
-import { User, UserDocument } from "../user/user.entity";
+import { User, UserDocument } from '../user/user.entity';
 
 @Schema({
     collection: 'notifications',
     toJSON: {
         virtuals: true,
-    }
+    },
 })
 export class Notification {
     _id: string;
-
-    @IsString()
-    @Prop(String)
-    content: string;
 
     @IsString()
     @Prop(String)
@@ -47,4 +43,4 @@ export class Notification {
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 
-export interface NotificationDocument extends Notification, Document { };
+export interface NotificationDocument extends Notification, Document {}

@@ -65,8 +65,6 @@ export class CommentService {
             tweet = parentComment.tweet;
         }
 
-        console.log(`parentComment`, parentComment);
-
         const newComment = new this.commentModel({
             ...createCommentDto,
             isEdited: false,

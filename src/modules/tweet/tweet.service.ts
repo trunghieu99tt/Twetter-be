@@ -101,7 +101,6 @@ export class TweetService {
         tweetDTO: CreateTweetDTO,
         user: UserDocument,
     ): Promise<TweetDocument> {
-        console.log(`tweetDTO`, tweetDTO);
         const tweet = new this.tweetModel({
             ...tweetDTO,
             createdAt: new Date(),
@@ -581,5 +580,32 @@ export class TweetService {
     async search(search: string, query: QueryPostOption) {
         const conditions = { content: { $regex: search, $options: 'i' } };
         return this.findAllAndCount(query.options, conditions);
+    }
+
+    async deleteTweetWithoutPermission(tweetId: string) {
+        try {
+            return this.tweetModel.findByIdAndDelete(tweetId);
+        } catch (error) {
+            console.log(`error`, error);
+        }
+    }
+
+    async getReportedTweets() {
+        const conditions = {
+            reportedCount: { $gt: 0 },
+        };
+        return this.tweetModel
+            .find(conditions)
+            .populate('author', '_id name')
+            .exec();
+    }
+
+    async createTweetByUserId(userId: string, tweetDto: CreateTweetDTO) {
+        const user = await this.userService.findById(userId);
+        if (user) {
+            const tweet = await this.createTweet(tweetDto, user);
+            return tweet;
+        }
+        return null;
     }
 }
