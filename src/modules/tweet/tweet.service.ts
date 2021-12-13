@@ -3,6 +3,7 @@ import {
     forwardRef,
     Inject,
     Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -607,5 +608,15 @@ export class TweetService {
             return tweet;
         }
         return null;
+    }
+
+    async reportTweet(tweetId: string) {
+        const tweet = await this.tweetModel.findById(tweetId);
+        if (tweet) {
+            tweet.reportedCount = tweet.reportedCount + 1;
+            return tweet.save();
+        } else {
+            throw new NotFoundException(`Tweet not found`);
+        }
     }
 }

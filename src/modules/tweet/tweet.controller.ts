@@ -193,6 +193,12 @@ export class TweetController {
         return ResponseTool.GET_OK(data, total);
     }
 
+    @Patch('/report/:tweetId')
+    async reportTweet(@Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+        const tweet = await this.tweetService.reportTweet(tweetId);
+        return ResponseTool.PATCH_OK(tweet);
+    }
+
     @Get('/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
