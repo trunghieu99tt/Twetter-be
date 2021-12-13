@@ -34,7 +34,7 @@ export class TweetService {
             .select({ password: 0, passwordConfirm: 0 })
             .skip(option.skip)
             .limit(option.limit)
-            .populate('author', 'name avatar coverPhoto followers gender')
+            .populate('author', '_id name avatar coverPhoto followers gender')
             .populate('retweetedBy', 'name avatar coverPhoto')
             .populate('likes', 'name avatar bio')
             .populate('retweeted', 'name avatar bio')
@@ -578,6 +578,14 @@ export class TweetService {
         return this.tweetModel.countDocuments(conditions).exec();
     }
 
+    async countTweetByUser(userId: string): Promise<number> {
+        const user = await this.userService.findById(userId);
+        const conditions = {
+            author: user,
+        };
+        return this.tweetModel.countDocuments(conditions).exec();
+    }
+
     async search(search: string, query: QueryPostOption) {
         const conditions = { content: { $regex: search, $options: 'i' } };
         return this.findAllAndCount(query.options, conditions);
@@ -613,10 +621,91 @@ export class TweetService {
     async reportTweet(tweetId: string) {
         const tweet = await this.tweetModel.findById(tweetId);
         if (tweet) {
-            tweet.reportedCount = tweet.reportedCount + 1;
+            tweet.reportedCount = +(tweet?.reportedCount || 0) + 1;
             return tweet.save();
         } else {
             throw new NotFoundException(`Tweet not found`);
         }
+    }
+
+    async getMostLikedTweets() {
+        const data = await this.tweetModel
+            .aggregate([
+                {
+                    $addFields: {
+                        likes_count: { $size: { $ifNull: ['$likes', []] } },
+                    },
+                },
+                {
+                    $sort: { likes_count: -1 },
+                },
+            ])
+            .skip(0)
+            .limit(5)
+            .exec();
+
+        return data;
+    }
+
+    async getMostSavedTweets() {
+        const data = await this.tweetModel
+            .aggregate([
+                {
+                    $addFields: {
+                        saved_count: {
+                            $size: { $ifNull: ['$saved', []] },
+                        },
+                    },
+                },
+                {
+                    $sort: { saved_count: -1 },
+                },
+            ])
+            .skip(0)
+            .limit(5)
+            .exec();
+
+        return data;
+    }
+
+    async getMostRetweetedTweets() {
+        const data = await this.tweetModel
+            .aggregate([
+                {
+                    $addFields: {
+                        retweeted_count: {
+                            $size: { $ifNull: ['$retweeted', []] },
+                        },
+                    },
+                },
+                {
+                    $sort: { retweeted_count: -1 },
+                },
+            ])
+            .skip(0)
+            .limit(5)
+            .exec();
+
+        return data;
+    }
+
+    async getTweetStatistic() {
+        const [mostLikedTweets, mostSavedTweets, mostRetweetedTweets] =
+            await Promise.all([
+                this.getMostLikedTweets(),
+                this.getMostSavedTweets(),
+                this.getMostRetweetedTweets(),
+            ]).catch((error: any) => {
+                console.log(`error`, error);
+                return [{}, {}, {}];
+            });
+
+        const data = {
+            mostLikedTweets,
+            mostSavedTweets,
+            mostRetweetedTweets,
+        };
+
+        return data;
     }
 }

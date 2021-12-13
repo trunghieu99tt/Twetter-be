@@ -86,6 +86,11 @@ export class UserController {
         return ResponseTool.GET_OK(data, total);
     }
 
+    @Get('/most-active')
+    async getMostActiveUsers(): Promise<ResponseDTO> {
+        return ResponseTool.GET_OK(await this.userService.getMostActiveUsers());
+    }
+
     @Get('/:userId')
     @ApiOkResponse({ type: UserDTO })
     async getUserById(@Param('userId') userId: string): Promise<ResponseDTO> {

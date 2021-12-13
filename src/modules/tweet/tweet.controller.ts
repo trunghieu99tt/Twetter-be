@@ -33,6 +33,12 @@ import { TweetService } from './tweet.service';
 export class TweetController {
     constructor(private readonly tweetService: TweetService) {}
 
+    @Get('tweet-statistic')
+    async getTweetStatistics(): Promise<ResponseDTO> {
+        const statistics = await this.tweetService.getTweetStatistic();
+        return ResponseTool.GET_OK(statistics);
+    }
+
     @Post('/')
     @ApiOkResponse({
         type: ResponseDTO,

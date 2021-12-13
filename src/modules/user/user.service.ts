@@ -24,11 +24,14 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 import { MSG } from 'src/common/config/constants';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { ObjectId } from 'mongodb';
+import { TweetService } from '../tweet/tweet.service';
 @Injectable()
 export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         private readonly userRepository: UserRepository,
+        @Inject(forwardRef(() => TweetService))
+        private readonly tweetService: TweetService,
     ) {}
 
     async validateUsernameOrEmail(username: string): Promise<boolean> {
@@ -392,5 +395,29 @@ export class UserService {
                 followers: userB.followers,
             });
         }
+    }
+
+    async getMostActiveUsers() {
+        const users = await this.userModel.find({
+            status: 'active',
+        });
+
+        const usersTweetCounter = await Promise.all(
+            users.map(async (user: UserDocument) => {
+                const userTweet = await this.tweetService.countTweetByUser(
+                    user._id,
+                );
+                return {
+                    user,
+                    tweetCount: userTweet,
+                };
+            }),
+        );
+
+        const response = usersTweetCounter
+            .sort((a, b) => b.tweetCount - a.tweetCount)
+            .slice(0, 5);
+
+        return response;
     }
 }
