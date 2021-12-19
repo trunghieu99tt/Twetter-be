@@ -586,8 +586,15 @@ export class TweetService {
         return this.tweetModel.countDocuments(conditions).exec();
     }
 
-    async search(search: string, query: QueryPostOption) {
-        const conditions = { content: { $regex: search, $options: 'i' } };
+    async search(user: UserDocument, search: string, query: QueryPostOption) {
+        const conditions = {
+            content: { $regex: search, $options: 'i' },
+            $or: [
+                { audience: 0 },
+                { author: { $in: user.following } },
+                { author: user },
+            ],
+        };
         return this.findAllAndCount(query.options, conditions);
     }
 

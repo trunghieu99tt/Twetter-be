@@ -290,6 +290,7 @@ export class UserService {
                     $match: {
                         _id: { $ne: user._id },
                         followers: { $ne: user._id },
+                        role: { $eq: 'user' },
                     },
                 },
             ])
@@ -331,6 +332,7 @@ export class UserService {
 
     async search(search: string, query: QueryPostOption) {
         const conditions = {
+            role: { $eq: 'user' },
             $or: [
                 {
                     name: {
@@ -367,6 +369,7 @@ export class UserService {
 
     async getUserList(query: QueryPostOption) {
         const conditions = {
+            role: { $eq: 'user' },
             $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
         };
 
@@ -400,6 +403,7 @@ export class UserService {
     async getMostActiveUsers() {
         const users = await this.userModel.find({
             status: 'active',
+            role: 'user',
         });
 
         const usersTweetCounter = await Promise.all(
