@@ -88,9 +88,10 @@ export class AuthService {
     ): Promise<AccessTokenResponse> {
         const { username, password } = loginDto;
         const user = await this.userService.findByUsernameOrEmail(username);
-        if (!user) {
+        if (!user || user.status !== 'active') {
             throw new NotFoundException('User not found');
         }
+
         const isCorrectPassword = await user.comparePassword(password);
         if (!isCorrectPassword) {
             throw new UnauthorizedException('Wrong username/password');
