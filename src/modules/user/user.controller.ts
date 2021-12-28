@@ -97,6 +97,16 @@ export class UserController {
         return ResponseTool.GET_OK(await this.userService.findById(userId));
     }
 
+    @Get('/admin/:userId')
+    @ApiOkResponse({ type: UserDTO })
+    async getUserByIdAdmin(
+        @Param('userId') userId: string,
+    ): Promise<ResponseDTO> {
+        return ResponseTool.GET_OK(
+            await this.userService.findByIdAdmin(userId),
+        );
+    }
+
     @Patch('/update')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
@@ -125,6 +135,12 @@ export class UserController {
                 requestUser,
             ),
         );
+    }
+
+    @Patch('/report/:userId')
+    async reportTweet(@Param('userId') userId: string): Promise<ResponseDTO> {
+        const user = await this.userService.reportUser(userId);
+        return ResponseTool.PATCH_OK(user);
     }
 
     @Post('/follow/:userId')

@@ -143,6 +143,7 @@ export class TweetService {
         switch (JSON.stringify(tweet.audience)) {
             // if tweet is only me
             case '2':
+                if (user?.role === 'admin') return tweet;
                 if (
                     userId !== tweetAuthorId &&
                     isRetweet &&
@@ -159,7 +160,8 @@ export class TweetService {
                 return tweet;
             // if tweet is only visible for followers
             case '1': {
-                if (userId === tweetAuthorId) return tweet;
+                if (userId === tweetAuthorId || user?.role === 'admin')
+                    return tweet;
 
                 // check if user is following the author
                 if (

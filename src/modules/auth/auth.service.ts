@@ -70,6 +70,7 @@ export class AuthService {
     ): Promise<AccessTokenResponse> {
         const newUser = await this.userService.createUser({
             ...userDto,
+            avatar: 'https://res.cloudinary.com/dwefhvioc/image/upload/v1640710871/decgndzvg7hdr00qsnwv.svg',
             isThirdParty: false,
         });
         const accessToken = await this.generateAccessToken(
@@ -87,8 +88,10 @@ export class AuthService {
         timestamp: number = Date.now(),
     ): Promise<AccessTokenResponse> {
         const { username, password } = loginDto;
+        console.log(`loginDto`, loginDto);
         const user = await this.userService.findByUsernameOrEmail(username);
-        if (!user || user.status !== 'active') {
+        console.log(`user`, user);
+        if (!user || user?.status?.toString() !== 'active') {
             throw new NotFoundException('User not found');
         }
 

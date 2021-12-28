@@ -52,6 +52,15 @@ export class UserService {
     }
 
     async findById(id: string): Promise<UserDocument> {
+        const user = await this.userRepository.findById(id);
+        if (user?.status.toString() !== 'active') {
+            throw new BadRequestException(UserService.name, 'User was banned');
+        }
+
+        return user;
+    }
+
+    async findByIdAdmin(id: string): Promise<UserDocument> {
         return this.userRepository.findById(id);
     }
 
@@ -423,5 +432,17 @@ export class UserService {
             .slice(0, 5);
 
         return response;
+    }
+
+    async reportUser(userId: string) {
+        const user = await this.findById(userId);
+        if (user) {
+            user.reportedCount = +(user.reportedCount || 0) + 1;
+            return this.userModel.findByIdAndUpdate(userId, {
+                reportedCount: user.reportedCount,
+            });
+        } else {
+            throw new BadRequestException('User not found');
+        }
     }
 }
