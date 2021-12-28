@@ -23,11 +23,15 @@ import { UpdateUserDTO } from './dto/updateUser.dto';
 // constants
 import { MSG } from 'src/common/config/constants';
 import { ResponseDTO } from 'src/common/dto/response.dto';
+import { ObjectId } from 'mongodb';
+import { TweetService } from '../tweet/tweet.service';
 @Injectable()
 export class UserService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         private readonly userRepository: UserRepository,
+        @Inject(forwardRef(() => TweetService))
+        private readonly tweetService: TweetService,
     ) {}
 
     async validateUsernameOrEmail(username: string): Promise<boolean> {
@@ -48,6 +52,15 @@ export class UserService {
     }
 
     async findById(id: string): Promise<UserDocument> {
+        const user = await this.userRepository.findById(id);
+        if (user?.status.toString() !== 'active') {
+            throw new BadRequestException(UserService.name, 'User was banned');
+        }
+
+        return user;
+    }
+
+    async findByIdAdmin(id: string): Promise<UserDocument> {
         return this.userRepository.findById(id);
     }
 
@@ -174,8 +187,6 @@ export class UserService {
     ): Promise<UserDocument> {
         const newUserInfo = await this.preUpdateUserHook(userId, data);
 
-        console.log(`newUserInfo.password`, newUserInfo.password);
-
         try {
             const response = await this.userModel.findOneAndUpdate(
                 {
@@ -191,6 +202,21 @@ export class UserService {
         } catch (error) {
             throw new BadRequestException(error);
         }
+    }
+
+    async updateUserById(
+        userId: string,
+        data: UpdateUserDTO,
+        requestUser: UserDocument,
+    ): Promise<UserDocument> {
+        if (['admin', 'root-admin'].includes(requestUser.role)) {
+            throw new BadRequestException(
+                UserService.name,
+                'You are not admin',
+            );
+        }
+
+        return this.updateUser(userId, data);
     }
 
     async findByGoogleId(id: string): Promise<UserDocument> {
@@ -252,7 +278,10 @@ export class UserService {
     async getPopularUsers(
         user: UserDocument,
         option: QueryOption,
-    ): Promise<UserDocument[]> {
+    ): Promise<{
+        data: UserDocument[];
+        total: number;
+    }> {
         // return data sorted by length of followers array
         const data = await this.userModel
             .aggregate([
@@ -270,17 +299,29 @@ export class UserService {
                     $match: {
                         _id: { $ne: user._id },
                         followers: { $ne: user._id },
+                        role: { $eq: 'user' },
                     },
                 },
             ])
             .skip(option.skip)
             .limit(option.limit)
             .exec();
+
         await this.userModel.populate(data, {
             path: 'followers',
             select: '_id',
         });
-        return data;
+
+        const conditions = {
+            _id: { $ne: user._id },
+            followers: { $ne: user._id },
+        };
+        const count = await this.userModel.countDocuments(conditions);
+
+        return {
+            data,
+            total: count,
+        };
     }
 
     count({ conditions }: { conditions?: any } = {}): Promise<number> {
@@ -300,6 +341,7 @@ export class UserService {
 
     async search(search: string, query: QueryPostOption) {
         const conditions = {
+            role: { $eq: 'user' },
             $or: [
                 {
                     name: {
@@ -308,7 +350,22 @@ export class UserService {
                     },
                 },
                 {
-                    bio: {
+                    email: {
+                        $regex: search,
+                        $options: 'i',
+                    },
+                },
+                {
+                    userName: {
+                        $regex: search,
+                        $options: 'i',
+                    },
+                },
+                {
+                    id: search,
+                },
+                {
+                    status: {
                         $regex: search,
                         $options: 'i',
                     },
@@ -317,5 +374,75 @@ export class UserService {
         };
 
         return this.findAllAndCount(query.options, conditions);
+    }
+
+    async getUserList(query: QueryPostOption) {
+        const conditions = {
+            role: { $eq: 'user' },
+            $or: [{ isDeleted: false }, { isDeleted: { $exists: false } }],
+        };
+
+        return this.findAllAndCount(query.options, conditions);
+    }
+
+    async deleteUser(userId: string) {
+        try {
+            return this.userModel.findByIdAndDelete(userId);
+        } catch (error) {
+            throw new BadRequestException(error);
+        }
+    }
+
+    async followAnonymous({ userAId, userBId }) {
+        // add userB to following list of userA
+        const userA = await this.findById(userAId);
+        if (!userA.following.some((user) => user._id.toString() === userBId)) {
+            const userB = await this.findById(userBId);
+            userA.following.push(userB);
+            userB.followers.push(userA);
+            await this.userModel.findByIdAndUpdate(userA._id, {
+                following: userA.following,
+            });
+            await this.userModel.findByIdAndUpdate(userB._id, {
+                followers: userB.followers,
+            });
+        }
+    }
+
+    async getMostActiveUsers() {
+        const users = await this.userModel.find({
+            status: 'active',
+            role: 'user',
+        });
+
+        const usersTweetCounter = await Promise.all(
+            users.map(async (user: UserDocument) => {
+                const userTweet = await this.tweetService.countTweetByUser(
+                    user._id,
+                );
+                return {
+                    user,
+                    tweetCount: userTweet,
+                };
+            }),
+        );
+
+        const response = usersTweetCounter
+            .sort((a, b) => b.tweetCount - a.tweetCount)
+            .slice(0, 5);
+
+        return response;
+    }
+
+    async reportUser(userId: string) {
+        const user = await this.findById(userId);
+        if (user) {
+            user.reportedCount = +(user.reportedCount || 0) + 1;
+            return this.userModel.findByIdAndUpdate(userId, {
+                reportedCount: user.reportedCount,
+            });
+        } else {
+            throw new BadRequestException('User not found');
+        }
     }
 }

@@ -1,16 +1,20 @@
-import { Injectable } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { QueryOption } from "src/tools/request.tool";
-import { User, UserDocument, USER_MODEL } from "./user.entity";
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { QueryOption } from 'src/tools/request.tool';
+import { User, UserDocument, USER_MODEL } from './user.entity';
 
 @Injectable()
 export class UserRepository {
-    constructor(@InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>) {
-    }
+    constructor(
+        @InjectModel(User.name)
+        private readonly userModel: Model<UserDocument>,
+    ) {}
 
-    async findAll(option: QueryOption, conditions: any = {}): Promise<UserDocument[]> {
+    async findAll(
+        option: QueryOption,
+        conditions: any = {},
+    ): Promise<UserDocument[]> {
         return this.userModel
             .find(conditions)
             .sort(option.sort)
@@ -32,7 +36,10 @@ export class UserRepository {
 
     async findByUsernameOrEmail(username: string): Promise<UserDocument> {
         return this.userModel
-            .findOne({ $or: [{ username }, { email: username }] })
+            .findOne({
+                $or: [{ username }, { email: username }],
+                status: 'active',
+            })
             .exec();
     }
 
@@ -41,11 +48,14 @@ export class UserRepository {
     }
 
     async updateByUsername(username: string, data: any): Promise<UserDocument> {
-        return this.userModel.findOneAndUpdate({
-            username,
-        },
-            data,
-            { new: true })
+        return this.userModel
+            .findOneAndUpdate(
+                {
+                    username,
+                },
+                data,
+                { new: true },
+            )
             .exec();
     }
 }

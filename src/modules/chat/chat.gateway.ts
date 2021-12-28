@@ -12,6 +12,7 @@ import { Room, RoomDocument } from '../room/room.entity';
 import { RoomService } from '../room/room.service';
 import { UserDocument } from '../user/user.entity';
 import { Server } from 'socket.io';
+import { RoomDTO } from '../room/dto/create-room.dto';
 
 @WebSocketGateway()
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -69,7 +70,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         let room = null;
         // 1. find in connected room
         room = this.connectedRooms.find(
-            (room: RoomDocument) => room._id.toString() === roomId,
+            (room: RoomDocument) => room?._id?.toString() === roomId,
         );
 
         // 2. if we can't find room in connected room, try finding it in db
@@ -166,6 +167,49 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         } else {
             this.callingRoom[roomId] = [newUserJoinsRoom];
         }
+    }
+
+    async findRoom(memberIds: string[]) {
+        if (memberIds.length === 1) {
+            return null;
+        }
+
+        // 1. find in connected rooms
+        let room = this.connectedRooms.find((room: RoomDocument) => {
+            const roomMemberIds =
+                room?.members?.map((member: UserDocument) =>
+                    member._id.toString(),
+                ) || [];
+
+            return memberIds?.every((memberId: string) =>
+                roomMemberIds?.includes(memberId),
+            );
+        });
+
+        // 2. if we can't find room in connected rooms, try finding it in db
+        if (!room) {
+            room = await this.roomService.findDmRoom(
+                memberIds[0],
+                memberIds[1],
+            );
+            // add room to connected rooms
+            this.connectedRooms.push(room);
+        }
+
+        // 3. if we can't find room in db, create it
+        if (!room) {
+            const newRoomDTO: RoomDTO = {
+                name: '',
+                isDm: true,
+                members: memberIds,
+                isPrivate: true,
+                description: '',
+            };
+            room = await this.roomService.createRoom(newRoomDTO);
+            this.connectedRooms.push(room);
+        }
+
+        return room;
     }
 
     async changeRoomCallState(roomId: string, hasCall: boolean) {
@@ -375,6 +419,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                         this.server.to(user.socketId).emit('roomHasCall', body);
                     }
                 });
+            }
+        }
+    }
+
+    @SubscribeMessage('newDMRoom')
+    async handleNewRoom(@MessageBody() body: any) {
+        const { owner, members } = body;
+        const ownerUser = this.findConnectedUserById(owner);
+        if (ownerUser?.socketId) {
+            const room = await this.findRoom(members);
+            if (room) {
+                console.log('Go to emit newDMRoom');
+                console.log(`ownerUser.socketId`, ownerUser.socketId);
+                this.server.to(ownerUser.socketId).emit('newDMRoom', room);
             }
         }
     }

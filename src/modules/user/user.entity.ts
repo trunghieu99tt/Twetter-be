@@ -1,5 +1,5 @@
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { IsEmail, IsString, Length } from 'class-validator';
+import { IsEmail, IsNumber, IsString, Length } from 'class-validator';
 import { Document } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { Schema as MongoSchema } from 'mongoose';
@@ -88,6 +88,7 @@ export class User {
 
     @Prop({
         enum: Object.values(EGender),
+        default: EGender.UNKNOWN,
     })
     gender: EGender;
 
@@ -143,9 +144,34 @@ export class User {
 
     @Prop({
         enum: Object.values(EAudience),
+        default: EAudience.PUBLIC,
     })
     storyAudience: EAudience;
 
+    @Prop({
+        type: String,
+        default: 'active',
+    })
+    status: string;
+
+    @IsString()
+    @Prop({
+        type: String,
+        index: true,
+        required: true,
+        trim: true,
+        default: 'user',
+    })
+    role: string;
+
+    @IsNumber()
+    @Prop({
+        type: Number,
+        default: 0,
+    })
+    reportedCount: number;
+
+    @Prop()
     callingId: string;
 
     socketId: string;

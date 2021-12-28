@@ -6,7 +6,9 @@ import { User, UserDocument, USER_MODEL } from '../user/user.entity';
 
 export const COMMENT_MODEL = 'comments';
 
-@Schema()
+@Schema({
+    collection: 'comments',
+})
 export class Comment {
     @IsString()
     @Prop(String)
@@ -19,10 +21,6 @@ export class Comment {
     @IsDate()
     @Prop(Date)
     modifiedAt: Date;
-
-    @IsBoolean()
-    @Prop(Boolean)
-    isEdited: boolean;
 
     @IsString()
     @Prop(String)

@@ -33,6 +33,12 @@ import { TweetService } from './tweet.service';
 export class TweetController {
     constructor(private readonly tweetService: TweetService) {}
 
+    @Get('tweet-statistic')
+    async getTweetStatistics(): Promise<ResponseDTO> {
+        const statistics = await this.tweetService.getTweetStatistic();
+        return ResponseTool.GET_OK(statistics);
+    }
+
     @Post('/')
     @ApiOkResponse({
         type: ResponseDTO,
@@ -45,6 +51,18 @@ export class TweetController {
         const newTweet = await this.tweetService.createTweet(
             createTweetDto,
             user,
+        );
+        return ResponseTool.POST_OK(newTweet);
+    }
+
+    @Post('/anonymous/:userId')
+    async createTweetAnonymous(
+        @Param('userId') userId: string,
+        @Body() createTweetDto: CreateTweetDTO,
+    ): Promise<ResponseDTO> {
+        const newTweet = await this.tweetService.createTweetByUserId(
+            userId,
+            createTweetDto,
         );
         return ResponseTool.POST_OK(newTweet);
     }
@@ -63,6 +81,12 @@ export class TweetController {
                 query.options,
             );
         return ResponseTool.GET_OK(data, total);
+    }
+
+    @Get('reportedTweet')
+    async getReportedTweets(): Promise<ResponseDTO> {
+        const data = await this.tweetService.getReportedTweets();
+        return ResponseTool.GET_OK(data);
     }
 
     @Get('/user/saved')
@@ -175,6 +199,12 @@ export class TweetController {
         return ResponseTool.GET_OK(data, total);
     }
 
+    @Patch('/report/:tweetId')
+    async reportTweet(@Param('tweetId') tweetId: string): Promise<ResponseDTO> {
+        const tweet = await this.tweetService.reportTweet(tweetId);
+        return ResponseTool.PATCH_OK(tweet);
+    }
+
     @Get('/:tweetId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)
@@ -200,6 +230,14 @@ export class TweetController {
             user,
         );
         return ResponseTool.PATCH_OK(updatedTweet);
+    }
+
+    @Delete('/:tweetId/without-permission')
+    async deleteTweetWithoutPermission(
+        @Param('tweetId') tweetId: string,
+    ): Promise<ResponseDTO> {
+        await this.tweetService.deleteTweetWithoutPermission(tweetId);
+        return ResponseTool.DELETE_OK({ message: 'Tweet deleted' });
     }
 
     @Delete('/:tweetId')

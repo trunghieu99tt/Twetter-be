@@ -65,8 +65,6 @@ export class CommentService {
             tweet = parentComment.tweet;
         }
 
-        console.log(`parentComment`, parentComment);
-
         const newComment = new this.commentModel({
             ...createCommentDto,
             isEdited: false,
@@ -195,7 +193,7 @@ export class CommentService {
             : this.commentModel.estimatedDocumentCount().exec();
     }
 
-    async search(search: string, query: QueryPostOption) {
+    async search(user: UserDocument, search: string, query: QueryPostOption) {
         const conditions = {
             content: { $regex: search, $options: 'i' },
         };

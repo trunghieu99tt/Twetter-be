@@ -3,6 +3,7 @@ import {
     forwardRef,
     Inject,
     Injectable,
+    NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -33,7 +34,7 @@ export class TweetService {
             .select({ password: 0, passwordConfirm: 0 })
             .skip(option.skip)
             .limit(option.limit)
-            .populate('author', 'name avatar coverPhoto followers gender')
+            .populate('author', '_id name avatar coverPhoto followers gender')
             .populate('retweetedBy', 'name avatar coverPhoto')
             .populate('likes', 'name avatar bio')
             .populate('retweeted', 'name avatar bio')
@@ -101,7 +102,6 @@ export class TweetService {
         tweetDTO: CreateTweetDTO,
         user: UserDocument,
     ): Promise<TweetDocument> {
-        console.log(`tweetDTO`, tweetDTO);
         const tweet = new this.tweetModel({
             ...tweetDTO,
             createdAt: new Date(),
@@ -143,6 +143,7 @@ export class TweetService {
         switch (JSON.stringify(tweet.audience)) {
             // if tweet is only me
             case '2':
+                if (user?.role === 'admin') return tweet;
                 if (
                     userId !== tweetAuthorId &&
                     isRetweet &&
@@ -159,7 +160,8 @@ export class TweetService {
                 return tweet;
             // if tweet is only visible for followers
             case '1': {
-                if (userId === tweetAuthorId) return tweet;
+                if (userId === tweetAuthorId || user?.role === 'admin')
+                    return tweet;
 
                 // check if user is following the author
                 if (
@@ -578,8 +580,141 @@ export class TweetService {
         return this.tweetModel.countDocuments(conditions).exec();
     }
 
-    async search(search: string, query: QueryPostOption) {
-        const conditions = { content: { $regex: search, $options: 'i' } };
+    async countTweetByUser(userId: string): Promise<number> {
+        const user = await this.userService.findById(userId);
+        const conditions = {
+            author: user,
+        };
+        return this.tweetModel.countDocuments(conditions).exec();
+    }
+
+    async search(user: UserDocument, search: string, query: QueryPostOption) {
+        const conditions = {
+            content: { $regex: search, $options: 'i' },
+            $or: [
+                { audience: 0 },
+                { author: { $in: user.following } },
+                { author: user },
+            ],
+        };
         return this.findAllAndCount(query.options, conditions);
+    }
+
+    async deleteTweetWithoutPermission(tweetId: string) {
+        try {
+            return this.tweetModel.findByIdAndDelete(tweetId);
+        } catch (error) {
+            console.log(`error`, error);
+        }
+    }
+
+    async getReportedTweets() {
+        const conditions = {
+            reportedCount: { $gt: 0 },
+        };
+        return this.tweetModel
+            .find(conditions)
+            .populate('author', '_id name')
+            .exec();
+    }
+
+    async createTweetByUserId(userId: string, tweetDto: CreateTweetDTO) {
+        const user = await this.userService.findById(userId);
+        if (user) {
+            const tweet = await this.createTweet(tweetDto, user);
+            return tweet;
+        }
+        return null;
+    }
+
+    async reportTweet(tweetId: string) {
+        const tweet = await this.tweetModel.findById(tweetId);
+        if (tweet) {
+            tweet.reportedCount = +(tweet?.reportedCount || 0) + 1;
+            return tweet.save();
+        } else {
+            throw new NotFoundException(`Tweet not found`);
+        }
+    }
+
+    async getMostLikedTweets() {
+        const data = await this.tweetModel
+            .aggregate([
+                {
+                    $addFields: {
+                        likes_count: { $size: { $ifNull: ['$likes', []] } },
+                    },
+                },
+                {
+                    $sort: { likes_count: -1 },
+                },
+            ])
+            .skip(0)
+            .limit(5)
+            .exec();
+
+        return data;
+    }
+
+    async getMostSavedTweets() {
+        const data = await this.tweetModel
+            .aggregate([
+                {
+                    $addFields: {
+                        saved_count: {
+                            $size: { $ifNull: ['$saved', []] },
+                        },
+                    },
+                },
+                {
+                    $sort: { saved_count: -1 },
+                },
+            ])
+            .skip(0)
+            .limit(5)
+            .exec();
+
+        return data;
+    }
+
+    async getMostRetweetedTweets() {
+        const data = await this.tweetModel
+            .aggregate([
+                {
+                    $addFields: {
+                        retweeted_count: {
+                            $size: { $ifNull: ['$retweeted', []] },
+                        },
+                    },
+                },
+                {
+                    $sort: { retweeted_count: -1 },
+                },
+            ])
+            .skip(0)
+            .limit(5)
+            .exec();
+
+        return data;
+    }
+
+    async getTweetStatistic() {
+        const [mostLikedTweets, mostSavedTweets, mostRetweetedTweets] =
+            await Promise.all([
+                this.getMostLikedTweets(),
+                this.getMostSavedTweets(),
+                this.getMostRetweetedTweets(),
+            ]).catch((error: any) => {
+                console.log(`error`, error);
+                return [{}, {}, {}];
+            });
+
+        const data = {
+            mostLikedTweets,
+            mostSavedTweets,
+            mostRetweetedTweets,
+        };
+
+        return data;
     }
 }

@@ -1,15 +1,15 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { IsString } from "class-validator";
-import { User, UserDocument, USER_MODEL } from "../user/user.entity";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { IsString } from 'class-validator';
+import { User, UserDocument, USER_MODEL } from '../user/user.entity';
 import { Document, Schema as MongoSchema } from 'mongoose';
-import { EAudience } from "src/common/config/constants";
+import { EAudience } from 'src/common/config/constants';
 
-export const TWEET_MODEL = "tweets";
+export const TWEET_MODEL = 'tweets';
 
 @Schema({
     timestamps: true,
     collection: TWEET_MODEL,
-    toJSON: { virtuals: true }
+    toJSON: { virtuals: true },
 })
 export class Tweet {
     @IsString()
@@ -17,12 +17,6 @@ export class Tweet {
         type: String,
     })
     content: string;
-
-    @IsString()
-    @Prop({
-        type: String,
-    })
-    location: string;
 
     @Prop([String])
     tags: string[];
@@ -33,7 +27,7 @@ export class Tweet {
 
     @Prop({
         type: MongoSchema.Types.ObjectId,
-        ref: User.name
+        ref: User.name,
     })
     author: UserDocument;
 
@@ -50,25 +44,30 @@ export class Tweet {
     retweetedBy: UserDocument;
 
     @Prop({
-        type: Date
+        type: Date,
     })
     createdAt: Date;
 
     @Prop({
-        type: Date
+        type: Date,
     })
     modifiedAt: Date;
 
     @Prop({
-        enum: Object.values(EAudience)
+        enum: Object.values(EAudience),
     })
     audience: EAudience;
 
     @Prop(Boolean)
     isRetweet: boolean;
-}
 
+    @Prop({
+        type: Number,
+        default: 0,
+    })
+    reportedCount: number;
+}
 
 export const TweetSchema = SchemaFactory.createForClass(Tweet);
 
-export interface TweetDocument extends Tweet, Document { };
+export interface TweetDocument extends Tweet, Document {}
