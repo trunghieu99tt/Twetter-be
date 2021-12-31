@@ -14,6 +14,7 @@ import { Tweet, TweetDocument } from './tweet.entity';
 import { UserService } from '../user/user.service';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { ObjectId } from 'mongodb';
+import { CommentService } from '../comment/comment.service';
 
 @Injectable()
 export class TweetService {
@@ -22,6 +23,8 @@ export class TweetService {
         private readonly tweetModel: Model<TweetDocument>,
         @Inject(forwardRef(() => UserService))
         private readonly userService: UserService,
+        @Inject(forwardRef(() => CommentService))
+        private readonly commentService: CommentService,
     ) {}
 
     async findAll(
@@ -115,6 +118,10 @@ export class TweetService {
         } catch (error) {
             throw new BadRequestException(error);
         }
+    }
+
+    async getTweetById(id: string): Promise<TweetDocument> {
+        return this.tweetModel.findById(id);
     }
 
     // get single tweet
@@ -235,6 +242,7 @@ export class TweetService {
                 'You have no permission to delete this tweet',
             );
         }
+        this.commentService.deleteCommentByTweetId(id);
         await this.tweetModel.findByIdAndRemove(id).exec();
     }
 
@@ -603,6 +611,15 @@ export class TweetService {
     async deleteTweetWithoutPermission(tweetId: string) {
         try {
             return this.tweetModel.findByIdAndDelete(tweetId);
+        } catch (error) {
+            console.log(`error`, error);
+        }
+    }
+
+    async deleteTweetsOfUserWithoutPermission(userId: string) {
+        try {
+            const user = await this.userService.findByIdAdmin(userId);
+            return this.tweetModel.deleteMany({ author: user });
         } catch (error) {
             console.log(`error`, error);
         }

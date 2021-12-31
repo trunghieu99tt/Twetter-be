@@ -120,6 +120,26 @@ export class UserController {
         );
     }
 
+    @Patch('/update/ban-status/:userId')
+    @ApiBearerAuth()
+    @UseGuards(MyTokenAuthGuard)
+    async updateBanStatusOfUser(
+        @GetUser() requestUser: UserDocument,
+        @Body()
+        body: {
+            status: string;
+        },
+        @Param('userId') userId: string,
+    ): Promise<ResponseDTO> {
+        return ResponseTool.PATCH_OK(
+            await this.userService.updateBanStatusOfUser(
+                requestUser,
+                body.status,
+                userId,
+            ),
+        );
+    }
+
     @Patch('/update/:userId')
     @ApiBearerAuth()
     @UseGuards(MyTokenAuthGuard)

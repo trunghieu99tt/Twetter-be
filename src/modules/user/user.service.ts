@@ -70,6 +70,10 @@ export class UserService {
         return this.userRepository.findByUsernameOrEmail(usernameOrEmail);
     }
 
+    async findByEmail(email: string): Promise<UserDocument> {
+        return this.userRepository.findByEmail(email);
+    }
+
     async generateNewPassword(password: string): Promise<string> {
         return bcrypt.hash(password, 10);
     }
@@ -387,6 +391,7 @@ export class UserService {
 
     async deleteUser(userId: string) {
         try {
+            await this.tweetService.deleteTweetsOfUserWithoutPermission(userId);
             return this.userModel.findByIdAndDelete(userId);
         } catch (error) {
             throw new BadRequestException(error);
@@ -444,5 +449,30 @@ export class UserService {
         } else {
             throw new BadRequestException('User not found');
         }
+    }
+
+    async updateBanStatusOfUser(
+        requestUser: UserDocument,
+        banStatus: string,
+        userId: string,
+    ): Promise<UserDocument> {
+        if (['admin'].includes(requestUser.role)) {
+            throw new BadRequestException(
+                UserService.name,
+                'You are not admin',
+            );
+        }
+
+        return this.userModel.findOneAndUpdate(
+            {
+                _id: userId,
+            },
+            {
+                status: banStatus,
+            },
+            {
+                new: true,
+            },
+        );
     }
 }

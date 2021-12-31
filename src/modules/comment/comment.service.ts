@@ -226,4 +226,9 @@ export class CommentService {
         const response = await comment.save();
         return response;
     }
+
+    async deleteCommentByTweetId(tweetId: string): Promise<void> {
+        const tweet = await this.tweetService.getTweetById(tweetId);
+        await this.commentModel.deleteMany({ tweet });
+    }
 }
