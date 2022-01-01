@@ -68,6 +68,7 @@ export class HashtagService {
     async search(search: string, query: QueryPostOption) {
         const conditions = {
             name: { $regex: search, $options: 'i' },
+            count: { $gt: 0 },
         };
 
         return this.findAllAndCount(query.options, conditions);

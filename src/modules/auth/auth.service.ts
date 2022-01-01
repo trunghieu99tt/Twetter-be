@@ -127,7 +127,6 @@ export class AuthService {
             idToken: tokenId,
             audience: GOOGLE_CLIENT_ID,
         });
-        console.log(`response.payload`, response.payload);
         const {
             email_verified,
             name,
@@ -141,9 +140,16 @@ export class AuthService {
         if (email_verified) {
             let user = null;
             try {
-                user = await this.userService.findByUsernameOrEmail(email);
+                user = await this.userService.findByEmail(email);
             } catch (error) {}
             if (user) {
+                if (user?.status.toString() !== 'active') {
+                    throw new BadRequestException(
+                        UserService.name,
+                        'User was banned',
+                    );
+                }
+
                 // If user with email already exists, return user data and access token
                 const accessToken = await this.generateAccessToken(
                     user._id,
@@ -227,9 +233,16 @@ export class AuthService {
 
         let user = null;
         if (email) {
-            user = await this.userService.findByUsernameOrEmail(email);
+            user = await this.userService.findByEmail(email);
         }
         if (user) {
+            if (user?.status.toString() !== 'active') {
+                throw new BadRequestException(
+                    UserService.name,
+                    'User was banned',
+                );
+            }
+
             const accessToken = await this.generateAccessToken(
                 user._id,
                 Date.now(),
