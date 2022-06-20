@@ -6,14 +6,12 @@ import { CommentController } from './comment.controller';
 import { TweetModule } from '../tweet/tweet.module';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([
-            { name: Comment.name, schema: CommentSchema },
-        ]),
-        TweetModule,
-    ],
-    providers: [CommentService],
-    controllers: [CommentController],
-    exports: [CommentService],
+  imports: [
+    MongooseModule.forFeature([{ name: Comment.name, schema: CommentSchema }]),
+    TweetModule,
+  ],
+  providers: [CommentService],
+  controllers: [CommentController],
+  exports: [CommentService],
 })
 export class CommentModule {}

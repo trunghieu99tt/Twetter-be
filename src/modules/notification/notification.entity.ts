@@ -4,41 +4,41 @@ import * as mongoose from 'mongoose';
 import { User, UserDocument } from '../user/user.entity';
 
 @Schema({
-    collection: 'notifications',
-    toJSON: {
-        virtuals: true,
-    },
+  collection: 'notifications',
+  toJSON: {
+    virtuals: true,
+  },
 })
 export class Notification {
-    _id: string;
+  _id: string;
 
-    @IsString()
-    @Prop(String)
-    url: string;
+  @IsString()
+  @Prop(String)
+  url: string;
 
-    @IsString()
-    @Prop(String)
-    text: string;
+  @IsString()
+  @Prop(String)
+  text: string;
 
-    @IsString()
-    @Prop(String)
-    image: string;
+  @IsString()
+  @Prop(String)
+  image: string;
 
-    @Prop()
-    isRead: string[];
+  @Prop()
+  isRead: string[];
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
-    sender: UserDocument;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
+  sender: UserDocument;
 
-    @Prop()
-    receivers: string[];
+  @Prop()
+  receivers: string[];
 
-    @IsString()
-    @Prop(String)
-    type: string;
+  @IsString()
+  @Prop(String)
+  type: string;
 
-    @Prop(Date)
-    createdAt: Date;
+  @Prop(Date)
+  createdAt: Date;
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);

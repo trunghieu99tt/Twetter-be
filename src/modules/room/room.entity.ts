@@ -4,51 +4,51 @@ import * as mongoose from 'mongoose';
 import { User, UserDocument } from '../user/user.entity';
 
 @Schema({
-    collection: 'rooms',
-    toJSON: {
-        virtuals: true,
-    },
+  collection: 'rooms',
+  toJSON: {
+    virtuals: true,
+  },
 })
 export class Room {
-    _id: string;
+  _id: string;
 
-    @IsString()
-    @Prop(String)
-    name: string;
+  @IsString()
+  @Prop(String)
+  name: string;
 
-    // @IsString()
-    // @Prop()
-    // roomId: string;
+  // @IsString()
+  // @Prop()
+  // roomId: string;
 
-    @IsString()
-    @Prop(String)
-    description: string;
+  @IsString()
+  @Prop(String)
+  description: string;
 
-    @IsString()
-    @Prop(String)
-    image: string;
+  @IsString()
+  @Prop(String)
+  image: string;
 
-    @IsDate()
-    @Prop(Date)
-    createdAt: Date;
+  @IsDate()
+  @Prop(Date)
+  createdAt: Date;
 
-    @IsDate()
-    @Prop(Date)
-    updatedAt: Date;
+  @IsDate()
+  @Prop(Date)
+  updatedAt: Date;
 
-    // @IsBoolean()
-    // @Prop(Boolean)
-    // isPrivate: boolean;
+  // @IsBoolean()
+  // @Prop(Boolean)
+  // isPrivate: boolean;
 
-    @IsBoolean()
-    @Prop(Boolean)
-    isDm: boolean;
+  @IsBoolean()
+  @Prop(Boolean)
+  isDm: boolean;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
-    owner: UserDocument;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
+  owner: UserDocument;
 
-    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: User.name }] })
-    members: UserDocument[];
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: User.name }] })
+  members: UserDocument[];
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

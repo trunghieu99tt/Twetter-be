@@ -8,14 +8,12 @@ import { TweetModule } from '../tweet/tweet.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema },
-    ]),
-    forwardRef(() => TweetModule)
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    forwardRef(() => TweetModule),
   ],
 
   providers: [UserService, UserRepository],
   controllers: [UserController],
-  exports: [UserService]
+  exports: [UserService],
 })
-export class UserModule { }
+export class UserModule {}

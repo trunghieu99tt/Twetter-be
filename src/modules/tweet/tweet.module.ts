@@ -8,13 +8,13 @@ import { UserModule } from '../user/user.module';
 import { CommentModule } from '../comment/comment.module';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Tweet.name, schema: TweetSchema }]),
-        forwardRef(() => UserModule),
-        forwardRef(() => CommentModule),
-    ],
-    providers: [TweetService],
-    controllers: [TweetController],
-    exports: [TweetService],
+  imports: [
+    MongooseModule.forFeature([{ name: Tweet.name, schema: TweetSchema }]),
+    forwardRef(() => UserModule),
+    forwardRef(() => CommentModule),
+  ],
+  providers: [TweetService],
+  controllers: [TweetController],
+  exports: [TweetService],
 })
 export class TweetModule {}

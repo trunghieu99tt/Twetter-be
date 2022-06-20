@@ -1,19 +1,19 @@
-import { BadRequestException, Injectable, PipeTransform } from "@nestjs/common";
-import { Types } from "mongoose";
+import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class ObjectIdPipeTransform implements PipeTransform {
-    constructor() {
-
+  constructor() {}
+  async transform(value: any) {
+    if (value === null || value === undefined) {
+      return null;
     }
-    async transform(value: any) {
-        if (value === null || value === undefined) {
-            return null;
-        }
 
-        if (Types.ObjectId.isValid(value))
-            return value;
+    if (Types.ObjectId.isValid(value)) return value;
 
-        throw new BadRequestException(ObjectIdPipeTransform.name, 'Id is not objectId');
-    }
+    throw new BadRequestException(
+      ObjectIdPipeTransform.name,
+      'Id is not objectId',
+    );
+  }
 }

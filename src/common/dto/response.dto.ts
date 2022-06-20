@@ -1,19 +1,19 @@
-import { HttpException } from "@nestjs/common";
-import { ApiProperty } from "@nestjs/swagger";
+import { HttpException } from '@nestjs/common';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class ResponseDTO {
-    @ApiProperty()
-    readonly data?: any;
+  @ApiProperty()
+  readonly data?: any;
 
-    @ApiProperty()
-    readonly total?: number;
+  @ApiProperty()
+  readonly total?: number;
 
-    @ApiProperty()
-    readonly error?: HttpException;
+  @ApiProperty()
+  readonly error?: HttpException;
 
-    @ApiProperty()
-    readonly message?: string;
+  @ApiProperty()
+  readonly message?: string;
 
-    @ApiProperty()
-    readonly statusCode?: number;
+  @ApiProperty()
+  readonly statusCode?: number;
 }

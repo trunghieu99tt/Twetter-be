@@ -4,8 +4,8 @@ dotenv.config();
 
 // get env
 export const getEnv = (key: string) => {
-    const value = process.env[key];
-    return value || '';
+  const value = process.env[key];
+  return value || '';
 };
 
 // server
@@ -23,6 +23,7 @@ export const PROJECT_VERSION = getEnv('PROJECT_VERSION');
 export const CLOUDINARY_URL = getEnv('CLOUDINARY_URL');
 export const CLOUDINARY_PATH = getEnv('CLOUDINARY_PATH');
 export const CLOUDINARY_PATH_DEV = getEnv('CLOUDINARY_PATH_DEV');
+export const CLOUDINARY_FOLDER = getEnv('CLOUDINARY_FOLDER');
 
 // MongoDB
 export const MONGO_URL = getEnv('MONGO_URL');

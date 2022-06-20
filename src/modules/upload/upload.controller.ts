@@ -1,22 +1,31 @@
-import { Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  Body,
+  Controller,
+  Post,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { MyTokenAuthGuard } from 'src/common/guards/token.guard';
-import { UploadService } from './upload.service';
 import { UploadTool } from '../../common/tool/upload.tool';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { ApiFile } from 'src/common/decorators/apiFile.decorator';
+import { UploadMetaInput } from './dtos/upload-meta-input.dto';
+import { UploaderService } from './uploader.service';
 @Controller('upload')
-@ApiTags("Upload")
+@ApiTags('Upload')
 export class UploadController {
+  constructor(private readonly uploaderService: UploaderService) {}
 
-    constructor(private readonly uploadService: UploadService) { }
-
-    @Post('/image')
-    @UseGuards(MyTokenAuthGuard)
-    @ApiConsumes('multipart/form-data')
-    @ApiFile("image")
-    @UseInterceptors(FileInterceptor('image', UploadTool.imageUpload))
-    uploadImage(@UploadedFile() fileUpload: any): Promise<{ url: string }> {
-        return this.uploadService.uploadSingleMedia(fileUpload);
-    }
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(MyTokenAuthGuard)
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FilesInterceptor('files', 20, UploadTool.imageUpload))
+  uploadMedia(
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() meta: UploadMetaInput,
+  ): Promise<string[]> {
+    return this.uploaderService.uploadMedias(files, meta);
+  }
 }

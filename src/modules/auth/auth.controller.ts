@@ -10,55 +10,55 @@ import { AccessTokenResponse } from './dto/accessTokenResponse.dto';
 import { LoginDTO } from './dto/login.dto';
 
 @Controller('auth')
-@ApiTags("Auth")
+@ApiTags('Auth')
 export class AuthController {
-    constructor(
-        private authService: AuthService
-    ) { }
+  constructor(private authService: AuthService) {}
 
-    @Post('/signup')
-    @ApiOkResponse({
-        type: AccessTokenResponse
-    })
-    async signUp(@Body() userDto: UserDTO): Promise<AccessTokenResponse> {
-        return this.authService.signUp(userDto);
-    }
+  @Post('/signup')
+  @ApiOkResponse({
+    type: AccessTokenResponse,
+  })
+  async signUp(@Body() userDto: UserDTO): Promise<AccessTokenResponse> {
+    return this.authService.signUp(userDto);
+  }
 
-    @Post('/signin')
-    @ApiOkResponse({
-        type: AccessTokenResponse
-    })
-    async signIn(@Body() loginDTO: LoginDTO): Promise<AccessTokenResponse> {
-        return this.authService.signIn(loginDTO);
-    }
+  @Post('/signin')
+  @ApiOkResponse({
+    type: AccessTokenResponse,
+  })
+  async signIn(@Body() loginDTO: LoginDTO): Promise<AccessTokenResponse> {
+    return this.authService.signIn(loginDTO);
+  }
 
-    @Post('/google')
-    @ApiOkResponse({
-        type: AccessTokenResponse
-    })
-    async googleAuth(@Body('tokenId') tokenId: string): Promise<AccessTokenResponse> {
-        console.log('tokenId: ', tokenId);
-        return this.authService.googleLogin(tokenId);
-    }
+  @Post('/google')
+  @ApiOkResponse({
+    type: AccessTokenResponse,
+  })
+  async googleAuth(
+    @Body('tokenId') tokenId: string,
+  ): Promise<AccessTokenResponse> {
+    console.log('tokenId: ', tokenId);
+    return this.authService.googleLogin(tokenId);
+  }
 
-    @Post('/github')
-    @ApiOkResponse({
-        type: AccessTokenResponse
-    })
-    async githubAuth(@Body('code') code: string): Promise<AccessTokenResponse> {
-        return this.authService.githubLogin(code);
-    }
+  @Post('/github')
+  @ApiOkResponse({
+    type: AccessTokenResponse,
+  })
+  async githubAuth(@Body('code') code: string): Promise<AccessTokenResponse> {
+    return this.authService.githubLogin(code);
+  }
 
-    @Post('/logout')
-    @ApiOkResponse()
-    @UseGuards(MyTokenAuthGuard)
-    async logout(@GetUser() user): Promise<{ message: string; }> {
-        return await this.authService.logout(user as UserDocument);
-    }
+  @Post('/logout')
+  @ApiOkResponse()
+  @UseGuards(MyTokenAuthGuard)
+  async logout(@GetUser() user): Promise<{ message: string }> {
+    return await this.authService.logout(user as UserDocument);
+  }
 
-    @Post('/forgot-password')
-    async forgotPassword(@Body('email') email: string) {
-        const response = await this.authService.resetPassword(email);
-        return ResponseTool.POST_OK(response);
-    }
+  @Post('/forgot-password')
+  async forgotPassword(@Body('email') email: string) {
+    const response = await this.authService.resetPassword(email);
+    return ResponseTool.POST_OK(response);
+  }
 }

@@ -11,8 +11,13 @@
         "outDir": "./dist",
         "baseUrl": "./",
         "incremental": true,
+        "skipLibCheck": true,
+        "strictNullChecks": false,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "forceConsistentCasingInFileNames": false,
+        "noFallthroughCasesInSwitch": false,
+        "esModuleInterop": true,
         "resolveJsonModule": true
-    },
-    "exclude": ["node_modules", "dist", "data", "uploads"],
-    "include": ["src", "test"]
+    }
 }

@@ -13,30 +13,38 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { HashtagModule } from './modules/hashtag/hashtag.module';
 import { SearchModule } from './modules/search/search.module';
 import { AgoraModule } from './modules/agora/Agora.module';
+import { ConfigModule } from '@nestjs/config';
+import config from './common/config';
 
 @Module({
-    imports: [
-        MongooseModule.forRoot(DATABASE_URL, {
-            useUnifiedTopology: true,
-            useNewUrlParser: true,
-            useFindAndModify: false,
-            useCreateIndex: true,
-            retryDelay: 5000,
-        }),
-        CommentModule,
-        TweetModule,
-        UserModule,
-        UploadModule,
-        AuthModule,
-        TokenModule,
-        ChatModule,
-        StoryModule,
-        NotificationModule,
-        HashtagModule,
-        SearchModule,
-        AgoraModule,
-    ],
-    controllers: [],
-    providers: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      expandVariables: true,
+      cache: true,
+      load: [config],
+    }),
+    MongooseModule.forRoot(DATABASE_URL, {
+      useUnifiedTopology: true,
+      useNewUrlParser: true,
+      useFindAndModify: false,
+      useCreateIndex: true,
+      retryDelay: 5000,
+    }),
+    CommentModule,
+    TweetModule,
+    UserModule,
+    UploadModule,
+    AuthModule,
+    TokenModule,
+    ChatModule,
+    StoryModule,
+    NotificationModule,
+    HashtagModule,
+    SearchModule,
+    AgoraModule,
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

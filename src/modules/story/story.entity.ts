@@ -4,33 +4,33 @@ import * as mongoose from 'mongoose';
 import { User, UserDocument } from '../user/user.entity';
 
 @Schema({
-    collection: 'stories',
-    toJSON: {
-        virtuals: true,
-    },
+  collection: 'stories',
+  toJSON: {
+    virtuals: true,
+  },
 })
 export class Story {
-    _id: string;
+  _id: string;
 
-    @IsString()
-    @Prop(String)
-    content: string;
+  @IsString()
+  @Prop(String)
+  content: string;
 
-    @IsString()
-    @Prop(String)
-    type: string;
+  @IsString()
+  @Prop(String)
+  type: string;
 
-    @Prop(Number)
-    audience: number;
+  @Prop(Number)
+  audience: number;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
-    owner: UserDocument;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
+  owner: UserDocument;
 
-    @Prop()
-    viewerIds: string[];
+  @Prop()
+  viewerIds: string[];
 
-    @Prop(Date)
-    createdAt: Date;
+  @Prop(Date)
+  createdAt: Date;
 }
 
 export const StorySchema = SchemaFactory.createForClass(Story);

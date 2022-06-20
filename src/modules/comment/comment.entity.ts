@@ -7,46 +7,46 @@ import { User, UserDocument, USER_MODEL } from '../user/user.entity';
 export const COMMENT_MODEL = 'comments';
 
 @Schema({
-    collection: 'comments',
+  collection: 'comments',
 })
 export class Comment {
-    @IsString()
-    @Prop(String)
-    content: string;
+  @IsString()
+  @Prop(String)
+  content: string;
 
-    @IsDate()
-    @Prop(Date)
-    createdAt: Date;
+  @IsDate()
+  @Prop(Date)
+  createdAt: Date;
 
-    @IsDate()
-    @Prop(Date)
-    modifiedAt: Date;
+  @IsDate()
+  @Prop(Date)
+  modifiedAt: Date;
 
-    @IsString()
-    @Prop(String)
-    media: string;
+  @IsString()
+  @Prop(String)
+  media: string;
 
-    @Prop({
-        type: MongoSchema.Types.ObjectId,
-        ref: Tweet.name,
-    })
-    tweet: TweetDocument;
+  @Prop({
+    type: MongoSchema.Types.ObjectId,
+    ref: Tweet.name,
+  })
+  tweet: TweetDocument;
 
-    // author prop refs to a User
-    @Prop({
-        type: MongoSchema.Types.ObjectId,
-        ref: User.name,
-    })
-    author: User;
+  // author prop refs to a User
+  @Prop({
+    type: MongoSchema.Types.ObjectId,
+    ref: User.name,
+  })
+  author: User;
 
-    @Prop()
-    likes: string[];
+  @Prop()
+  likes: string[];
 
-    @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: Comment.name }] })
-    replies: Comment[];
+  @Prop({ type: [{ type: MongoSchema.Types.ObjectId, ref: Comment.name }] })
+  replies: Comment[];
 
-    @Prop(Boolean)
-    isChild: boolean;
+  @Prop(Boolean)
+  isChild: boolean;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);

@@ -1,9 +1,9 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class PaginationRequestDTO {
-    @ApiProperty()
-    readonly page: number;
+  @ApiProperty()
+  readonly page: number;
 
-    @ApiProperty()
-    readonly pageSize: number;
+  @ApiProperty()
+  readonly pageSize: number;
 }

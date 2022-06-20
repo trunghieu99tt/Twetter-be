@@ -1,15 +1,15 @@
-import { IsString } from "class-validator";
-import { UserDocument } from "src/modules/user/user.entity";
+import { IsString } from 'class-validator';
+import { UserDocument } from 'src/modules/user/user.entity';
 
 export class CreateMessageDTO {
-    @IsString()
-    content: string;
+  @IsString()
+  content: string;
 
-    @IsString()
-    file: string;
+  @IsString()
+  file: string;
 
-    author: UserDocument;
+  author: UserDocument;
 
-    @IsString()
-    roomId: string;
+  @IsString()
+  roomId: string;
 }

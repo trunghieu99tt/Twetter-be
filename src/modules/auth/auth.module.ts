@@ -26,11 +26,11 @@ import { GoogleStrategy } from './strategies/google.strategy';
     JwtModule.register({
       secret: JWT_SECRET,
       signOptions: {
-        expiresIn: JWT_EXP
-      }
+        expiresIn: JWT_EXP,
+      },
     }),
   ],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
-  controllers: [AuthController]
+  providers: [AuthService, JwtStrategy],
+  controllers: [AuthController],
 })
-export class AuthModule { }
+export class AuthModule {}
