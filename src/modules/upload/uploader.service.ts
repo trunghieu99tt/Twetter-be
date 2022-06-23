@@ -173,7 +173,12 @@ export class UploaderService {
     });
     const isNsfw = await this.isNsfw(filePath);
     if (isNsfw) {
-      throw new BadRequestException('NSFW Detected');
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error(`${this.uploadImage.name} unlink error`, err);
+        }
+      });
+      throw new BadRequestException('nsfw');
     }
     await this.resizeImage({
       file,
@@ -181,7 +186,11 @@ export class UploaderService {
       ...imageFormat,
     });
     const url = await this.uploadToCloudinary(filePath);
-    fs.unlinkSync(filePath);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error(`${this.uploadImage.name} unlink error`, err);
+      }
+    });
     return url;
   }
 
@@ -189,7 +198,11 @@ export class UploaderService {
     const filePath = this.getFilePath('video');
     fs.writeFileSync(filePath, file.buffer);
     const url = await this.uploadToCloudinary(filePath);
-    fs.unlinkSync(filePath);
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error(`${this.uploadImage.name} unlink error`, err);
+      }
+    });
     return url;
   }
 
