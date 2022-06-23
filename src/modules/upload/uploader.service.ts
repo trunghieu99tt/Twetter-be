@@ -26,9 +26,11 @@ const PORN_ClASSES = ['Porn', 'Hentai'];
 @Injectable()
 export class UploaderService {
   private model: nsfw.NSFWJS;
+  private imagePath: string = '';
 
   constructor(private readonly configService: ConfigService) {
     this.loadNsfwModel();
+    this.imagePath = this.configService.get<string>('imagePath');
   }
 
   private async loadNsfwModel(): Promise<void> {
@@ -59,7 +61,7 @@ export class UploaderService {
     type: 'video' | 'image',
     format: keyof FormatEnum = 'jpeg',
   ): string {
-    return `${process.cwd()}/uploads/${
+    return `${this.imagePath}/uploads/${
       type === 'video' ? `${uuid()}.mp4` : `${uuid()}.${format}`
     }`;
   }
