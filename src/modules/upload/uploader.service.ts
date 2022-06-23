@@ -61,7 +61,7 @@ export class UploaderService {
     type: 'video' | 'image',
     format: keyof FormatEnum = 'jpeg',
   ): string {
-    return `${this.imagePath}/uploads/${
+    return `${this.imagePath}/${
       type === 'video' ? `${uuid()}.mp4` : `${uuid()}.${format}`
     }`;
   }
