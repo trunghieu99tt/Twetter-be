@@ -1,13 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ObjectId } from 'mongodb';
 import { Model } from 'mongoose';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { QueryOption } from 'src/tools/request.tool';
-import { UserDocument } from '../user/user.entity';
-import { UserService } from '../user/user.service';
 import { CreateMessageDTO } from './dto/create-message.dto';
 import { Message, MessageDocument } from './message.entity';
+import _ from 'lodash';
 
 @Injectable()
 export class MessageService {
@@ -45,7 +44,7 @@ export class MessageService {
     roomId: string,
   ): Promise<MessageDocument> {
     const newMessage = new this.messageModel({
-      ...messageDto,
+      ..._.omit(messageDto, ['_id']),
       roomId: roomId,
       createdAt: new Date(),
     });
