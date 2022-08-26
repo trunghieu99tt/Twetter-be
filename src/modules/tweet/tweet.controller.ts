@@ -8,12 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOkResponse,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   ApiQueryGetMany,
   QueryGet,
@@ -25,6 +20,7 @@ import { ResponseTool } from 'src/tools/response.tool';
 import { GetUser } from '../user/decorator/getUser.decorator';
 import { UserDocument } from '../user/user.entity';
 import { CreateTweetDTO } from './dto/createTweet.dto';
+import { UpdateTweetInputDto } from './dto/update-tweet-input.dto';
 import { TweetService } from './tweet.service';
 
 @Controller('tweet')
@@ -219,7 +215,7 @@ export class TweetController {
   async updateTweet(
     @GetUser() user: UserDocument,
     @Param('tweetId') tweetId: string,
-    @Body() updateTweetDto: CreateTweetDTO,
+    @Body() updateTweetDto: UpdateTweetInputDto,
   ): Promise<ResponseDTO> {
     const updatedTweet = await this.tweetService.updateTweet(
       tweetId,
