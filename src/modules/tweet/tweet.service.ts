@@ -15,6 +15,10 @@ import { UserService } from '../user/user.service';
 import { ResponseDTO } from 'src/common/dto/response.dto';
 import { ObjectId } from 'mongodb';
 import { CommentService } from '../comment/comment.service';
+import {
+  EUpdateTweetType,
+  UpdateTweetInputDto,
+} from './dto/update-tweet-input.dto';
 
 @Injectable()
 export class TweetService {
@@ -61,8 +65,14 @@ export class TweetService {
     const conditions = {
       $or: [
         { audience: 0 },
-        { author: { $in: following }, audience: 1 },
-        { author: user },
+        ...[
+          (following?.length > 0 && {
+            author: { $in: following },
+            audience: 1,
+          }) ||
+            {},
+        ],
+        ...[user ? { author: user } : {}],
       ],
     };
     return this.findAllAndCount(option, conditions);
@@ -197,10 +207,9 @@ export class TweetService {
     return null;
   }
 
-  // update a tweet
   async updateTweet(
     id: string,
-    tweetDTO: CreateTweetDTO,
+    input: UpdateTweetInputDto,
     user: UserDocument,
   ): Promise<TweetDocument> {
     const isAuthor = await this.hasPermission(user, id);
@@ -209,13 +218,24 @@ export class TweetService {
         'You have no permission to update this tweet',
       );
     }
-    try {
-      const response = await this.tweetModel
-        .findByIdAndUpdate(id, tweetDTO, { new: true })
-        .exec();
-      return response;
-    } catch (error) {
-      throw new BadRequestException(error);
+
+    switch (input.type) {
+      case EUpdateTweetType.REACT:
+        return this.reactTweet(id, user);
+      case EUpdateTweetType.SAVE:
+        return this.saveTweet(id, user);
+      case EUpdateTweetType.RETWEET:
+        return this.reTweet(id, user);
+      default: {
+        try {
+          const response = await this.tweetModel
+            .findByIdAndUpdate(id, input, { new: true })
+            .exec();
+          return response;
+        } catch (error) {
+          throw new BadRequestException(error);
+        }
+      }
     }
   }
 
