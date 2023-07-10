@@ -71,6 +71,35 @@ export class NotificationService {
     }
   }
 
+  async updateReadStatusNotifications(
+    userId: string,
+    ids: string[],
+  ): Promise<void> {
+    const notifications = await this.notificationModel.find({
+      _id: { $in: ids },
+    });
+
+    if (notifications) {
+      notifications.forEach((notification) => {
+        if (!notification.isRead.includes(userId)) {
+          notification.isRead.push(userId);
+        }
+      });
+
+      console.log('notifications', notifications);
+
+      const response = await this.notificationModel.bulkWrite(
+        notifications.map((notification) => ({
+          updateOne: {
+            filter: { _id: notification._id },
+            update: { $set: { isRead: notification.isRead } },
+          },
+        })),
+      );
+      console.log('response', response);
+    }
+  }
+
   async deleteAllNotifications(userId: string) {
     const conditions = {
       ' user._id': userId,

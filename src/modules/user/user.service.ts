@@ -4,27 +4,16 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { Model } from 'mongoose';
-import * as bcrypt from 'bcryptjs';
 import { InjectModel } from '@nestjs/mongoose';
-
-// tool
-import { QueryOption, QueryPostOption } from 'src/tools/request.tool';
-
-// entity
-import { User, UserDocument } from './user.entity';
-
-// repository
-import { UserRepository } from './user.repository';
-
-// dto
-import { UpdateUserDTO } from './dto/updateUser.dto';
-
-// constants
+import * as bcrypt from 'bcryptjs';
+import { Model } from 'mongoose';
 import { MSG } from 'src/common/config/constants';
 import { ResponseDTO } from 'src/common/dto/response.dto';
-import { ObjectId } from 'mongodb';
+import { QueryOption, QueryPostOption } from 'src/tools/request.tool';
 import { TweetService } from '../tweet/tweet.service';
+import { UpdateUserDTO } from './dto/updateUser.dto';
+import { User, UserDocument } from './user.entity';
+import { UserRepository } from './user.repository';
 @Injectable()
 export class UserService {
   constructor(
@@ -284,13 +273,16 @@ export class UserService {
         {
           $sort: { followers_count: -1 },
         },
-        {
-          $match: {
-            _id: { $ne: user._id },
-            followers: { $ne: user._id },
-            role: { $eq: 'user' },
+        ...((user?._id && [
+          {
+            $match: {
+              _id: { $ne: user._id },
+              followers: { $ne: user._id },
+              role: { $eq: 'user' },
+            },
           },
-        },
+        ]) ||
+          []),
       ])
       .skip(option.skip)
       .limit(option.limit)
@@ -302,8 +294,10 @@ export class UserService {
     });
 
     const conditions = {
-      _id: { $ne: user._id },
-      followers: { $ne: user._id },
+      ...(user?._id && {
+        _id: { $ne: user._id },
+        followers: { $ne: user._id },
+      }),
     };
     const count = await this.userModel.countDocuments(conditions);
 

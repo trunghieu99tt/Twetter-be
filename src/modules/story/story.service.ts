@@ -63,20 +63,33 @@ export class StoryService {
     query: QueryOption,
   ): Promise<StoryDocument[]> {
     // get all stories where audience is 0 or 1 but user's following
-    // and created at is within the last 24 hours
+    // and created at is within the last 24
+
+    const orConditions: any[] = [
+      {
+        audience: 0,
+      },
+    ];
+    if (user?.following?.length > 0) {
+      orConditions.push({
+        audience: 1,
+        owner: {
+          $in: user.following,
+        },
+      });
+    }
+    if (user) {
+      orConditions.push({
+        owner: user,
+      });
+    }
 
     const conditions = {
-      $or: [
-        { audience: 0 },
-        { audience: 1, owner: { $in: user.following } },
-        { owner: user },
-      ],
+      $or: orConditions,
       createdAt: {
         $gte: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
       },
     };
-
-    console.log(`conditions`, conditions);
 
     return this.findAll(query, conditions);
   }

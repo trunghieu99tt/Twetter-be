@@ -26,7 +26,7 @@ const PORN_ClASSES = ['Porn', 'Hentai'];
 @Injectable()
 export class UploaderService {
   private model: nsfw.NSFWJS;
-  private imagePath: string = '';
+  private imagePath = '';
 
   constructor(private readonly configService: ConfigService) {
     this.loadNsfwModel();
@@ -100,10 +100,17 @@ export class UploaderService {
     }
   }
 
-  private async uploadToCloudinary(file: string): Promise<string> {
+  private getFileType = (file: Express.Multer.File) =>
+    file.originalname?.split('.')[1];
+
+  private async uploadToCloudinary(
+    file: string,
+    format: string,
+  ): Promise<string> {
     try {
       const response = await cloudinary.uploader.upload(file, {
         folder: this.configService.get<string>('cloudinary.path'),
+        resource_type: format,
       });
       return response?.secure_url ?? '';
     } catch (error) {
@@ -168,6 +175,8 @@ export class UploaderService {
     imageFormat: IImageFormat,
   ): Promise<string> {
     const filePath = this.getFilePath('image');
+    console.log('filePath', filePath);
+
     await this.resizeImage({
       file,
       filePath,
@@ -187,7 +196,7 @@ export class UploaderService {
       filePath,
       ...imageFormat,
     });
-    const url = await this.uploadToCloudinary(filePath);
+    const url = await this.uploadToCloudinary(filePath, 'image');
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error(`${this.uploadImage.name} unlink error`, err);
@@ -199,7 +208,8 @@ export class UploaderService {
   private async uploadVideo(file: Express.Multer.File): Promise<string> {
     const filePath = this.getFilePath('video');
     fs.writeFileSync(filePath, file.buffer);
-    const url = await this.uploadToCloudinary(filePath);
+    console.log('file', file);
+    const url = await this.uploadToCloudinary(filePath, 'video');
     fs.unlink(filePath, (err) => {
       if (err) {
         console.error(`${this.uploadImage.name} unlink error`, err);
@@ -218,6 +228,8 @@ export class UploaderService {
     const videoFiles = files.filter((file) =>
       file.mimetype.startsWith('video/'),
     );
+
+    console.log('videoFiles', videoFiles);
 
     const imageFormat = this.getImageFormat(meta);
     const uploadImageFunc = this.uploadImage.bind(this);

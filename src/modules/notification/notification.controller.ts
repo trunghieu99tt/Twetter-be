@@ -51,6 +51,20 @@ export class NotificationController {
     });
   }
 
+  @Patch('/read')
+  @UseGuards(MyTokenAuthGuard)
+  async readMultiNotifications(
+    @GetUser() user: UserDocument,
+    @Body('ids') ids: string[],
+  ) {
+    const updatedNotification =
+      await this.notificationService.updateReadStatusNotifications(
+        user._id,
+        ids,
+      );
+    return ResponseTool.PATCH_OK(updatedNotification);
+  }
+
   @Patch('/read/:id')
   @UseGuards(MyTokenAuthGuard)
   async read(@GetUser() user: UserDocument, @Param('id') id: string) {

@@ -84,7 +84,7 @@ export class TweetService {
     userRequest: UserDocument,
   ): Promise<ResponseDTO> {
     const user = await this.userService.findById(userId);
-    const isUserRequestFollowingUser = userRequest.following.some(
+    const isUserRequestFollowingUser = userRequest?.following?.some(
       (u: UserDocument) => u._id.toString() === userId,
     );
 
@@ -94,16 +94,13 @@ export class TweetService {
     };
 
     if (
-      user._id.toString() === userRequest._id.toString() ||
+      user._id.toString() === userRequest?._id?.toString() ||
       isUserRequestFollowingUser
     ) {
       conditions = {
         $or: [{ author: user, isRetweet: false }, { retweetedBy: user }],
       };
     }
-
-    console.log(`conditions`, conditions);
-
     return this.findAllAndCount(option, conditions);
   }
 
@@ -150,6 +147,7 @@ export class TweetService {
 
     const isRetweet = tweet?.isRetweet || false;
 
+    if (tweet?.audience == 0) return tweet;
     // we need these information for comparator step below
     // if they don't exist => our server caught error, so return null immediately without any comparator
     if (!user || !tweetAuthorId) return null;
@@ -161,10 +159,6 @@ export class TweetService {
         if (userId !== tweetAuthorId && isRetweet && userId !== retweetedById) {
           throw new BadRequestException('You are not the author of this tweet');
         }
-        return tweet;
-
-      // if tweet is public
-      case '0':
         return tweet;
       // if tweet is only visible for followers
       case '1': {
@@ -336,7 +330,10 @@ export class TweetService {
   ): Promise<ResponseDTO> {
     const following = user.following;
     const conditions = {
-      $or: [{ audience: 0 }, { author: { $in: following } }],
+      $or: [
+        { audience: 0 },
+        ...((user?._id && [{ author: { $in: following } }]) || []),
+      ],
     };
 
     const data = await this.tweetModel
@@ -382,8 +379,24 @@ export class TweetService {
     option: QueryOption,
   ): Promise<ResponseDTO> {
     const following = user.following;
+    const orConditions: any[] = [
+      {
+        audience: 0,
+      },
+    ];
+    if (following?.length > 0) {
+      orConditions.push({
+        author: { $in: following },
+      });
+    }
+    if (user) {
+      orConditions.push({
+        author: user,
+      });
+    }
+
     const conditions = {
-      $or: [{ audience: 0 }, { author: { $in: following } }, { author: user }],
+      $or: orConditions,
     };
     option.sort = {
       ...option.sort,
@@ -443,7 +456,11 @@ export class TweetService {
   ): Promise<ResponseDTO> {
     const following = user.following;
     const conditions = {
-      $or: [{ audience: 0 }, { author: { $in: following } }, { author: user }],
+      $or: [
+        { audience: 0 },
+        ...((user?._id && [{ author: { $in: following } }, { author: user }]) ||
+          []),
+      ],
     };
 
     const aggregation = [
@@ -488,16 +505,18 @@ export class TweetService {
     option: QueryOption,
   ): Promise<ResponseDTO> {
     let user = userParam;
+    console.log('userParam', userParam);
+
     const following = userParam.following;
 
     let conditions: any = {
       author: new ObjectId(userId),
     };
 
-    if (userParam._id.toString() !== userId) {
+    if (userParam?._id?.toString() !== userId) {
       user = await this.userService.findById(userId);
 
-      const isUserFollowing = following.some(
+      const isUserFollowing = following?.some(
         (u: UserDocument) => u._id.toString() === userId,
       );
       console.log(`following`, following);

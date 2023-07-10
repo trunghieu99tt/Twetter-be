@@ -8,8 +8,7 @@ import {
 import { ObjectId } from 'mongodb';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios';
-import * as bcrypt from 'bcryptjs';
-const { OAuth2Client } = require('google-auth-library');
+import * as bcrypt from 'bcryptjs';const { OAuth2Client } = require('google-auth-library');
 
 // entity
 import { UserDocument } from '../user/user.entity';

@@ -29,6 +29,9 @@ export class CommentService {
       .limit(option.limit)
       .populate('author', 'name avatar coverPhoto')
       .populate('tweet', '_id')
+      .sort({
+        createdAt: -1,
+      })
       .populate({
         path: 'replies',
         populate: {
@@ -169,6 +172,8 @@ export class CommentService {
       };
       return this.findAllAndCount(query.options, conditions);
     } catch (error) {
+      console.log('error', error);
+
       throw new BadRequestException(error);
     }
   }

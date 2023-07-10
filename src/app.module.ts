@@ -15,6 +15,8 @@ import { SearchModule } from './modules/search/search.module';
 import { AgoraModule } from './modules/agora/Agora.module';
 import { ConfigModule } from '@nestjs/config';
 import config from './common/config';
+import { AppController } from './app.controller';
+import { LinkPreviewModule } from './modules/link-preview/link-preview.module';
 
 @Module({
   imports: [
@@ -43,8 +45,9 @@ import config from './common/config';
     HashtagModule,
     SearchModule,
     AgoraModule,
+    LinkPreviewModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}
